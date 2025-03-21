@@ -479,70 +479,68 @@ section {
 
 .navbar li {
     position: relative;
+    transform-style: preserve-3d;
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .navbar a {
     position: relative;
     font-size: 1.6rem;
     font-weight: 500;
-    padding: 8px 16px;
+    padding: 12px 25px;
     color: var(--text-color-light);
-    transition: color 0.3s ease;
+    background-color: var(--bg-color-lighter);
+    border-radius: var(--border-radius-md);
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 1;
 }
 
 .navbar a::before {
     content: '';
     position: absolute;
-    width: 100%;
-    height: 2px;
-    bottom: -2px;
-    left: 0;
-    background: linear-gradient(90deg, 
-        var(--primary-color), 
-        var(--primary-light)
-    );
-    transform: scaleX(0);
-    transform-origin: right;
-    transition: transform 0.3s ease;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(157, 78, 221, 0.05) 0%, rgba(157, 78, 221, 0.1) 100%);
+    border-radius: var(--border-radius-md);
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
 .navbar a::after {
     content: '';
     position: absolute;
-    width: 100%;
-    height: 100%;
-    left: 0;
-    top: 0;
-    background: linear-gradient(
-        90deg,
-        var(--primary-color) 0%,
-        var(--primary-light) 50%,
-        var(--primary-color) 100%
-    );
+    width: 150%;
+    height: 150%;
+    background: radial-gradient(circle, rgba(157, 78, 221, 0.4) 0%, rgba(157, 78, 221, 0) 70%);
+    top: -25%;
+    left: -25%;
     opacity: 0;
-    border-radius: 4px;
-    z-index: -1;
-    transition: opacity 0.3s ease;
+    z-index: -2;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
 }
 
 .navbar a:hover,
 .navbar a.active {
     color: white;
+    transform: translateY(-5px) translateZ(20px);
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.2),
+        0 15px 20px rgba(157, 78, 221, 0.2);
 }
 
 .navbar a:hover::before,
 .navbar a.active::before {
-    transform: scaleX(1);
-    transform-origin: left;
+    opacity: 1;
 }
 
 .navbar a:hover::after,
 .navbar a.active::after {
-    opacity: 0.15;
+    opacity: 0.7;
 }
 
-.navbar li:hover .navbar a {
-    text-shadow: 0 0 8px rgba(157, 78, 221, 0.5);
+.navbar li:hover {
+    transform: translateZ(30px);
 }
 
 .mobile-nav {
