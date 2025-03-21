@@ -496,14 +496,13 @@ section {
     height: 2px;
     background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
     transform: scaleX(0);
-    transform-origin: right;
-    transition: transform 0.4s ease;
+    transform-origin: left;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .navbar a:hover::before,
 .navbar a.active::before {
     transform: scaleX(1);
-    transform-origin: left;
 }
 
 .navbar a:hover,
