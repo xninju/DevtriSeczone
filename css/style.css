@@ -459,37 +459,9 @@ section {
 }
 
 /* Visitor Counter */
-.visitor-counter {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    margin-right: 30px;
-}
-
-.visitor-count {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background-color: var(--bg-color-lighter);
-    border-radius: var(--border-radius-md);
-    padding: 8px 15px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-}
-
-#visitor-count {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: var(--primary-color);
-}
-
-.visitor-label {
-    font-size: 1.2rem;
-    color: var(--text-color-light);
-}
-
-.admin-link {
-    width: 35px;
-    height: 35px;
+.theme-toggle {
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     background-color: var(--bg-color-lighter);
     display: flex;
@@ -497,15 +469,22 @@ section {
     align-items: center;
     color: var(--text-color);
     font-size: 1.6rem;
-    transition: var(--transition-medium);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    transform-style: preserve-3d;
+    perspective: 1000px;
+    margin-right: 20px;
 }
 
-.admin-link:hover {
+.theme-toggle:hover {
     background-color: var(--primary-color);
     color: white;
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    transform: rotateY(15deg) rotateX(15deg) translateZ(5px);
+    box-shadow: 
+        -5px -5px 15px rgba(255, 255, 255, 0.05),
+        5px 5px 15px rgba(0, 0, 0, 0.3),
+        0 8px 20px rgba(157, 78, 221, 0.3);
 }
 
 #header.sticky {
@@ -513,28 +492,89 @@ section {
     height: 70px;
 }
 
+/* 3D Logo */
 .logo a {
     display: flex;
     align-items: center;
     font-size: 2.2rem;
     font-weight: 700;
     color: var(--text-color);
+    transform-style: preserve-3d;
+    perspective: 1000px;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.logo a:hover {
+    transform: translateZ(10px) rotateX(5deg) rotateY(5deg);
 }
 
 .logo svg {
     margin-right: 10px;
+    filter: drop-shadow(0 0 5px rgba(157, 78, 221, 0.3));
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+.logo a:hover svg {
+    transform: rotate(360deg) scale(1.1);
+    filter: drop-shadow(0 0 8px rgba(157, 78, 221, 0.6));
+}
+
+.logo span {
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    transition: text-shadow 0.3s ease;
+}
+
+.logo a:hover span {
+    text-shadow: 3px 3px 6px rgba(157, 78, 221, 0.4);
+}
+
+/* 3D Navigation Menu */
 .navbar ul {
     display: flex;
     gap: 30px;
+    perspective: 1000px;
+}
+
+.navbar li {
+    position: relative;
+    transform-style: preserve-3d;
+    transition: all 0.3s ease;
+}
+
+.navbar li:hover {
+    transform: translateZ(5px);
 }
 
 .navbar a {
     position: relative;
     font-size: 1.6rem;
     font-weight: 500;
-    transition: var(--transition-medium);
+    padding: 8px 15px;
+    border-radius: 8px;
+    transform-style: preserve-3d;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 1;
+}
+
+.navbar a span {
+    position: relative;
+    z-index: 2;
+    display: block;
+    transition: transform 0.3s ease;
+}
+
+.navbar a::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(157, 78, 221, 0.1), rgba(157, 78, 221, 0.2));
+    border-radius: 8px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 1;
 }
 
 .navbar a::after {
@@ -542,20 +582,36 @@ section {
     position: absolute;
     width: 0;
     height: 2px;
-    bottom: -5px;
-    left: 0;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
     background-color: var(--primary-color);
-    transition: var(--transition-medium);
+    transition: width 0.3s ease;
+    z-index: 3;
+}
+
+.navbar a:hover span,
+.navbar a.active span {
+    transform: translateY(-2px);
+}
+
+.navbar a:hover::before,
+.navbar a.active::before {
+    opacity: 1;
 }
 
 .navbar a:hover,
 .navbar a.active {
     color: var(--primary-color);
+    box-shadow: 
+        0 10px 20px rgba(0, 0, 0, 0.1),
+        0 6px 6px rgba(157, 78, 221, 0.1);
+    transform: translateZ(10px);
 }
 
 .navbar a:hover::after,
 .navbar a.active::after {
-    width: 100%;
+    width: 80%;
 }
 
 .hamburger {
