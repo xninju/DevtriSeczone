@@ -208,6 +208,21 @@
     .cursor, .cursor-follower {
         display: none;
     }
+    
+    /* Help Bot adjustments */
+    .help-bot-container {
+        width: 300px;
+        right: -20px;
+    }
+    
+    .help-bot-button {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .help-bot-button i {
+        font-size: 2rem;
+    }
 }
 
 /* Very Small Devices */
