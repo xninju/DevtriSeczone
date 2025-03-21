@@ -17,8 +17,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const navItems = document.querySelectorAll('.admin-nav li');
     const adminPanels = document.querySelectorAll('.admin-panel');
     
+    // API endpoint
+    const API_BASE_URL = window.location.hostname === 'localhost' 
+        ? 'http://localhost:3000/api' 
+        : 'http://' + window.location.hostname + ':3000/api';
+    
     // Initialize dashboard
     updateStats();
+    
+    // Set up auto-refresh every 30 seconds
+    setInterval(updateStats, 30000);
     
     // Set up navigation
     navItems.forEach(item => {
@@ -43,10 +51,38 @@ document.addEventListener('DOMContentLoaded', function() {
      * Update all statistics on the dashboard
      */
     function updateStats() {
-        // Get data from localStorage
-        const visitors = JSON.parse(localStorage.getItem('portfolio_visitors')) || [];
-        const pageViews = JSON.parse(localStorage.getItem('portfolio_pageviews')) || [];
-        const sessionDurations = JSON.parse(localStorage.getItem('portfolio_sessionDurations')) || [];
+        // Show loading state
+        if (totalVisitorsElement) totalVisitorsElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        
+        // Fetch data from API
+        fetch(`${API_BASE_URL}/admin/data`)
+            .then(response => response.json())
+            .then(data => {
+                // Process the data
+                const visitors = data.visitors || [];
+                const pageViews = data.pageViews || [];
+                const sessionDurations = data.sessionDurations || [];
+                
+                // Update UI with the data
+                updateDashboardWithData(visitors, pageViews, sessionDurations);
+            })
+            .catch(error => {
+                console.error('Error fetching admin data:', error);
+                
+                // Fallback to localStorage data if API fails
+                const visitors = JSON.parse(localStorage.getItem('portfolio_visitors')) || [];
+                const pageViews = JSON.parse(localStorage.getItem('portfolio_pageviews')) || [];
+                const sessionDurations = JSON.parse(localStorage.getItem('portfolio_sessionDurations')) || [];
+                
+                // Update UI with localStorage data
+                updateDashboardWithData(visitors, pageViews, sessionDurations);
+            });
+    }
+    
+    /**
+     * Update dashboard with the provided data
+     */
+    function updateDashboardWithData(visitors, pageViews, sessionDurations) {
         
         // Update summary stats
         updateSummaryStats(visitors, pageViews, sessionDurations);
