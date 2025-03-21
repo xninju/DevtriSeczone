@@ -1,267 +1,492 @@
 /*---------------------------------------------
  * Admin Dashboard JavaScript
- * Handles visitor analytics and dashboard
+ * Displays visitor data and analytics
  *--------------------------------------------*/
 
 document.addEventListener('DOMContentLoaded', function() {
     'use strict';
     
-    // References to DOM elements
-    const totalVisitorsCount = document.getElementById('total-visitors-count');
-    const currentSessionCount = document.getElementById('current-session-count');
-    const pageViewsCount = document.getElementById('page-views-count');
-    const avgTimeCount = document.getElementById('avg-time-count');
+    // DOM elements
+    const totalVisitorsElement = document.getElementById('total-visitors');
+    const totalPageViewsElement = document.getElementById('total-page-views');
+    const avgSessionTimeElement = document.getElementById('avg-session-time');
+    const mobileUsersElement = document.getElementById('mobile-users');
     const visitorsTableBody = document.getElementById('visitors-table-body');
+    const browserStatsElement = document.getElementById('browser-stats');
+    const pageStatsElement = document.getElementById('page-stats');
+    const navItems = document.querySelectorAll('.admin-nav li');
+    const adminPanels = document.querySelectorAll('.admin-panel');
     
-    // Load visitors data from localStorage
-    const visitors = JSON.parse(localStorage.getItem('portfolio_visitors')) || [];
-    const pageViews = JSON.parse(localStorage.getItem('portfolio_pageviews')) || [];
-    const sessionDurations = JSON.parse(localStorage.getItem('portfolio_sessionDurations')) || [];
-    
-    // Update stats in the UI
+    // Initialize dashboard
     updateStats();
     
-    // Populate visitors table
-    populateVisitorsTable();
-    
-    // Initialize charts
-    initCharts();
-    
-    // Function to update the dashboard stats
-    function updateStats() {
-        // Total unique visitors
-        totalVisitorsCount.textContent = visitors.length;
-        
-        // Current session count (visitors in last 15 minutes)
-        const recentVisitors = visitors.filter(visitor => {
-            return (new Date().getTime() - visitor.timestamp) < 15 * 60 * 1000;
+    // Set up navigation
+    navItems.forEach(item => {
+        item.addEventListener('click', function() {
+            const targetId = this.querySelector('a').getAttribute('href').substring(1);
+            
+            // Update active nav item
+            navItems.forEach(navItem => navItem.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Show corresponding panel
+            adminPanels.forEach(panel => {
+                panel.classList.remove('active');
+                if (panel.id === targetId) {
+                    panel.classList.add('active');
+                }
+            });
         });
-        currentSessionCount.textContent = recentVisitors.length;
+    });
+    
+    /**
+     * Update all statistics on the dashboard
+     */
+    function updateStats() {
+        // Get data from localStorage
+        const visitors = JSON.parse(localStorage.getItem('portfolio_visitors')) || [];
+        const pageViews = JSON.parse(localStorage.getItem('portfolio_pageviews')) || [];
+        const sessionDurations = JSON.parse(localStorage.getItem('portfolio_sessionDurations')) || [];
         
-        // Total page views
-        pageViewsCount.textContent = pageViews.length;
+        // Update summary stats
+        updateSummaryStats(visitors, pageViews, sessionDurations);
         
-        // Average session duration
-        const avgDuration = sessionDurations.length > 0 
-            ? sessionDurations.reduce((acc, duration) => acc + duration, 0) / sessionDurations.length 
-            : 0;
-        avgTimeCount.textContent = Math.round(avgDuration / 60) + ' min';
+        // Populate visitors table
+        populateVisitorsTable(visitors);
+        
+        // Initialize charts
+        initCharts(visitors, pageViews, sessionDurations);
+        
+        // Update browser and page stats
+        updateBrowserStats(visitors);
+        updatePageStats(pageViews);
     }
     
-    // Function to populate the visitors table
-    function populateVisitorsTable() {
-        // Clear existing rows
+    /**
+     * Update the summary statistics at the top of the dashboard
+     */
+    function updateSummaryStats(visitors, pageViews, sessionDurations) {
+        // Total visitors
+        totalVisitorsElement.textContent = visitors.length;
+        
+        // Total page views
+        totalPageViewsElement.textContent = pageViews.length;
+        
+        // Average session time
+        const avgSessionTime = sessionDurations.length > 0 
+            ? Math.round(sessionDurations.reduce((sum, duration) => sum + duration, 0) / sessionDurations.length)
+            : 0;
+        avgSessionTimeElement.textContent = formatTime(avgSessionTime);
+        
+        // Mobile users percentage
+        const mobileCount = visitors.filter(visitor => visitor.device === 'Mobile').length;
+        const mobilePercentage = visitors.length > 0 
+            ? Math.round((mobileCount / visitors.length) * 100) 
+            : 0;
+        mobileUsersElement.textContent = `${mobilePercentage}%`;
+    }
+    
+    /**
+     * Populate the visitors table with data
+     */
+    function populateVisitorsTable(visitors) {
+        // Clear existing table content
         visitorsTableBody.innerHTML = '';
         
-        // Sort visitors by timestamp (latest first)
+        // Sort visitors by timestamp (most recent first)
         const sortedVisitors = [...visitors].sort((a, b) => b.timestamp - a.timestamp);
         
-        // Show only the latest 10 visitors
-        const recentVisitors = sortedVisitors.slice(0, 10);
-        
-        // Add rows for each visitor
-        recentVisitors.forEach(visitor => {
+        // Add each visitor to the table
+        sortedVisitors.forEach(visitor => {
             const row = document.createElement('tr');
             
-            // Create visitor ID cell
+            // Create visitor ID cell (shortened for display)
             const idCell = document.createElement('td');
-            idCell.textContent = visitor.id.substring(0, 8) + '...'; // Truncate ID for display
-            row.appendChild(idCell);
+            idCell.textContent = visitor.id.substring(0, 8) + '...';
             
-            // Create visit time cell
-            const timeCell = document.createElement('td');
-            const visitDate = new Date(visitor.timestamp);
-            timeCell.textContent = formatDate(visitDate);
-            row.appendChild(timeCell);
+            // Create date cell
+            const dateCell = document.createElement('td');
+            dateCell.textContent = formatDate(new Date(visitor.timestamp));
+            
+            // Create visits cell
+            const visitsCell = document.createElement('td');
+            visitsCell.textContent = visitor.visits;
             
             // Create browser cell
             const browserCell = document.createElement('td');
             browserCell.textContent = visitor.browser || 'Unknown';
-            row.appendChild(browserCell);
             
             // Create device cell
             const deviceCell = document.createElement('td');
             deviceCell.textContent = visitor.device || 'Unknown';
-            row.appendChild(deviceCell);
             
             // Create screen size cell
             const screenCell = document.createElement('td');
             screenCell.textContent = visitor.screenSize || 'Unknown';
+            
+            // Add cells to row
+            row.appendChild(idCell);
+            row.appendChild(dateCell);
+            row.appendChild(visitsCell);
+            row.appendChild(browserCell);
+            row.appendChild(deviceCell);
             row.appendChild(screenCell);
             
-            // Add the row to the table
+            // Add row to table
             visitorsTableBody.appendChild(row);
         });
-        
-        // If no visitors, show a message
-        if (recentVisitors.length === 0) {
-            const row = document.createElement('tr');
-            const cell = document.createElement('td');
-            cell.setAttribute('colspan', '5');
-            cell.textContent = 'No visitor data available yet.';
-            cell.style.textAlign = 'center';
-            cell.style.padding = '20px';
-            row.appendChild(cell);
-            visitorsTableBody.appendChild(row);
-        }
     }
     
-    // Function to format date for display
+    /**
+     * Format a date object to a readable string
+     */
     function formatDate(date) {
-        const now = new Date();
-        const diff = now - date;
-        
-        // If less than a day
-        if (diff < 24 * 60 * 60 * 1000) {
-            return date.toLocaleTimeString();
-        }
-        
-        // Otherwise show full date
-        return date.toLocaleString();
+        const options = { 
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        };
+        return date.toLocaleDateString('en-US', options);
     }
     
-    // Function to initialize charts
-    function initCharts() {
-        // Traffic over time chart
-        initTrafficChart();
-        
-        // Device distribution chart
-        initDeviceChart();
+    /**
+     * Format time in seconds to a readable string
+     */
+    function formatTime(seconds) {
+        if (seconds < 60) {
+            return `${seconds}s`;
+        } else if (seconds < 3600) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes}m ${remainingSeconds}s`;
+        } else {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            return `${hours}h ${minutes}m`;
+        }
     }
     
-    // Initialize traffic chart
-    function initTrafficChart() {
-        const ctx = document.getElementById('traffic-chart').getContext('2d');
+    /**
+     * Initialize all charts
+     */
+    function initCharts(visitors, pageViews, sessionDurations) {
+        initTrafficChart(pageViews);
+        initDeviceChart(visitors);
+        initSessionChart(sessionDurations);
+    }
+    
+    /**
+     * Initialize traffic overview chart
+     */
+    function initTrafficChart(pageViews) {
+        const trafficChartCanvas = document.getElementById('traffic-chart');
         
-        // Group pageviews by hour
-        const hourlyData = {};
+        // Group page views by day
+        const viewsByDay = {};
         const now = new Date();
         
-        // Initialize last 24 hours with 0 views
-        for (let i = 23; i >= 0; i--) {
-            const hour = new Date(now.getTime() - i * 60 * 60 * 1000).getHours();
-            hourlyData[hour] = 0;
+        // Initialize the last 7 days with 0 views
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(now.getDate() - i);
+            const dateString = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            viewsByDay[dateString] = 0;
         }
         
-        // Count pageviews for each hour in the last 24 hours
+        // Count page views for each day
         pageViews.forEach(view => {
-            const viewDate = new Date(view.timestamp);
-            if (now.getTime() - viewDate.getTime() < 24 * 60 * 60 * 1000) {
-                const hour = viewDate.getHours();
-                hourlyData[hour] = (hourlyData[hour] || 0) + 1;
+            const date = new Date(view.timestamp);
+            // Only count views from the last 7 days
+            if ((now - date) / (1000 * 60 * 60 * 24) <= 7) {
+                const dateString = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                viewsByDay[dateString] = (viewsByDay[dateString] || 0) + 1;
             }
         });
         
-        // Prepare labels and data for the chart
-        const hours = Object.keys(hourlyData).sort((a, b) => a - b);
-        const formattedHours = hours.map(hour => {
-            const hourInt = parseInt(hour);
-            return hourInt === 0 ? '12 AM' : 
-                   hourInt === 12 ? '12 PM' :
-                   hourInt < 12 ? `${hourInt} AM` : `${hourInt - 12} PM`;
-        });
-        const viewCounts = hours.map(hour => hourlyData[hour]);
-        
-        // Create the chart
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: formattedHours,
-                datasets: [{
-                    label: 'Page Views',
-                    data: viewCounts,
-                    backgroundColor: 'rgba(157, 78, 221, 0.2)',
-                    borderColor: 'rgba(157, 78, 221, 1)',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.05)'
+        // Create chart
+        if (trafficChartCanvas) {
+            const ctx = trafficChartCanvas.getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Object.keys(viewsByDay),
+                    datasets: [{
+                        label: 'Page Views',
+                        data: Object.values(viewsByDay),
+                        backgroundColor: 'rgba(157, 78, 221, 0.2)',
+                        borderColor: '#9D4EDD',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        pointBackgroundColor: '#9D4EDD',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#CCCCCC'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            }
                         },
-                        ticks: {
-                            color: 'rgba(255, 255, 255, 0.7)'
+                        x: {
+                            ticks: {
+                                color: '#CCCCCC'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            }
                         }
                     },
-                    x: {
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.05)'
-                        },
-                        ticks: {
-                            color: 'rgba(255, 255, 255, 0.7)',
-                            maxRotation: 45,
-                            minRotation: 45
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        labels: {
-                            color: 'rgba(255, 255, 255, 0.7)'
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#CCCCCC'
+                            }
                         }
                     }
                 }
-            }
-        });
+            });
+        }
     }
     
-    // Initialize device chart
-    function initDeviceChart() {
-        const ctx = document.getElementById('device-chart').getContext('2d');
+    /**
+     * Initialize device distribution chart
+     */
+    function initDeviceChart(visitors) {
+        const deviceChartCanvas = document.getElementById('device-chart');
         
         // Count devices
-        const deviceCounts = {};
+        const deviceCounts = {
+            'Desktop': 0,
+            'Mobile': 0,
+            'Tablet': 0
+        };
+        
         visitors.forEach(visitor => {
             const device = visitor.device || 'Unknown';
             deviceCounts[device] = (deviceCounts[device] || 0) + 1;
         });
         
-        // Prepare data for the chart
-        const devices = Object.keys(deviceCounts);
-        const counts = devices.map(device => deviceCounts[device]);
-        
-        // Define colors for the chart
-        const backgroundColors = [
-            'rgba(157, 78, 221, 0.7)',
-            'rgba(33, 150, 243, 0.7)',
-            'rgba(76, 175, 80, 0.7)',
-            'rgba(255, 152, 0, 0.7)',
-            'rgba(156, 39, 176, 0.7)'
-        ];
-        
-        // Create the chart
-        new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: devices,
-                datasets: [{
-                    data: counts,
-                    backgroundColor: backgroundColors,
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'right',
-                        labels: {
-                            color: 'rgba(255, 255, 255, 0.7)'
+        // Create chart
+        if (deviceChartCanvas) {
+            const ctx = deviceChartCanvas.getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(deviceCounts),
+                    datasets: [{
+                        data: Object.values(deviceCounts),
+                        backgroundColor: [
+                            '#9D4EDD',
+                            '#5A189A',
+                            '#3C096C'
+                        ],
+                        borderColor: '#121212',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#CCCCCC',
+                                padding: 15
+                            }
                         }
                     }
                 }
+            });
+        }
+    }
+    
+    /**
+     * Initialize session duration chart
+     */
+    function initSessionChart(sessionDurations) {
+        const sessionChartCanvas = document.getElementById('session-chart');
+        
+        // Group session durations into buckets
+        const durationBuckets = {
+            '< 1 min': 0,
+            '1-3 min': 0,
+            '3-5 min': 0,
+            '5-10 min': 0,
+            '> 10 min': 0
+        };
+        
+        sessionDurations.forEach(duration => {
+            if (duration < 60) {
+                durationBuckets['< 1 min']++;
+            } else if (duration < 180) {
+                durationBuckets['1-3 min']++;
+            } else if (duration < 300) {
+                durationBuckets['3-5 min']++;
+            } else if (duration < 600) {
+                durationBuckets['5-10 min']++;
+            } else {
+                durationBuckets['> 10 min']++;
             }
+        });
+        
+        // Create chart
+        if (sessionChartCanvas) {
+            const ctx = sessionChartCanvas.getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(durationBuckets),
+                    datasets: [{
+                        label: 'Number of Sessions',
+                        data: Object.values(durationBuckets),
+                        backgroundColor: '#9D4EDD',
+                        borderColor: '#5A189A',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#CCCCCC'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#CCCCCC'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#CCCCCC'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+    
+    /**
+     * Update browser distribution stats
+     */
+    function updateBrowserStats(visitors) {
+        // Count browsers
+        const browserCounts = {};
+        
+        visitors.forEach(visitor => {
+            const browser = visitor.browser || 'Unknown';
+            browserCounts[browser] = (browserCounts[browser] || 0) + 1;
+        });
+        
+        // Sort browsers by count (descending)
+        const sortedBrowsers = Object.entries(browserCounts)
+            .sort((a, b) => b[1] - a[1]);
+        
+        // Clear existing content
+        browserStatsElement.innerHTML = '';
+        
+        // Create browser stat items
+        sortedBrowsers.forEach(([browser, count]) => {
+            const percentage = visitors.length > 0 
+                ? Math.round((count / visitors.length) * 100) 
+                : 0;
+            
+            const statItem = document.createElement('div');
+            statItem.className = 'stat-item';
+            
+            // Browser icon based on name
+            let iconClass = 'fas fa-globe';
+            if (browser === 'Chrome') iconClass = 'fab fa-chrome';
+            else if (browser === 'Firefox') iconClass = 'fab fa-firefox';
+            else if (browser === 'Safari') iconClass = 'fab fa-safari';
+            else if (browser === 'Edge') iconClass = 'fab fa-edge';
+            else if (browser === 'Opera') iconClass = 'fab fa-opera';
+            else if (browser === 'Internet Explorer') iconClass = 'fab fa-internet-explorer';
+            
+            statItem.innerHTML = `
+                <div class="stat-name">
+                    <i class="${iconClass}"></i>
+                    ${browser}
+                </div>
+                <div class="stat-value">${percentage}%</div>
+                <div class="progress-container">
+                    <div class="progress-bar" style="width: ${percentage}%"></div>
+                </div>
+            `;
+            
+            browserStatsElement.appendChild(statItem);
         });
     }
     
-    // Update data periodically to keep the dashboard current
-    setInterval(updateStats, 60000); // Update every minute
+    /**
+     * Update page popularity stats
+     */
+    function updatePageStats(pageViews) {
+        // Count page views by path
+        const pageCounts = {};
+        
+        pageViews.forEach(view => {
+            const page = view.page || '/';
+            pageCounts[page] = (pageCounts[page] || 0) + 1;
+        });
+        
+        // Sort pages by count (descending)
+        const sortedPages = Object.entries(pageCounts)
+            .sort((a, b) => b[1] - a[1]);
+        
+        // Clear existing content
+        pageStatsElement.innerHTML = '';
+        
+        // Create page stat items
+        sortedPages.forEach(([page, count]) => {
+            const percentage = pageViews.length > 0 
+                ? Math.round((count / pageViews.length) * 100) 
+                : 0;
+            
+            const statItem = document.createElement('div');
+            statItem.className = 'stat-item';
+            
+            // Get page name from path
+            let pageName = page === '/' ? 'Home' : page.split('/').pop().split('.')[0];
+            pageName = pageName.charAt(0).toUpperCase() + pageName.slice(1); // Capitalize
+            
+            statItem.innerHTML = `
+                <div class="stat-name">
+                    <i class="fas fa-file"></i>
+                    ${pageName}
+                </div>
+                <div class="stat-value">${count} views</div>
+                <div class="progress-container">
+                    <div class="progress-bar" style="width: ${percentage}%"></div>
+                </div>
+            `;
+            
+            pageStatsElement.appendChild(statItem);
+        });
+    }
 });
