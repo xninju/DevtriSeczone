@@ -20,6 +20,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Init stat counters
         initCounters();
+        
+        // Initialize the help bot
+        initHelpBot();
     };
     
     // Get all DOM elements
@@ -373,5 +376,155 @@ document.addEventListener('DOMContentLoaded', function() {
         revealElements.forEach(element => {
             revealObserver.observe(element);
         });
+    }
+    
+    // Initialize help bot
+    function initHelpBot() {
+        const helpBot = document.querySelector('.help-bot');
+        const helpBotButton = document.querySelector('.help-bot-button');
+        const helpBotCloseButton = document.querySelector('.help-bot-close');
+        const helpBotContainer = document.querySelector('.help-bot-container');
+        const helpBotInput = document.getElementById('bot-input');
+        const sendButton = document.querySelector('.send-button');
+        const helpBotMessages = document.querySelector('.help-bot-messages');
+        
+        // Response database - simple question/answer pairs
+        const botResponses = {
+            'hi': 'Hello! How can I help you today?',
+            'hello': 'Hi there! How can I assist you?',
+            'hey': 'Hey! What can I do for you?',
+            
+            'who are you': 'I\'m a portfolio assistant bot. I can help answer questions about this portfolio, skills, and projects.',
+            'what is this': 'This is a professional portfolio website showcasing my work, skills, and experience as a frontend developer.',
+            'what do you do': 'I\'m here to help visitors navigate this portfolio and answer questions about my skills, projects, and experience.',
+            
+            'contact': 'You can get in touch through the contact form in the Contact section, or directly via email at john.doe@example.com.',
+            'email': 'You can reach me at john.doe@example.com',
+            'phone': 'For contact information, please check the Contact section or send me an email.',
+            
+            'projects': 'I have worked on various web development projects. You can check them out in the Projects section of this portfolio.',
+            'work': 'My work includes various web development projects. Visit the Projects section to see some examples.',
+            'portfolio': 'My portfolio showcases various web development projects with different technologies. Feel free to browse through the Projects section.',
+            
+            'skills': 'My skills include HTML5, CSS3, JavaScript, React, Sass, Bootstrap, Git, and more. Check the Skills section for a comprehensive list.',
+            'technologies': 'I work with HTML5, CSS3, JavaScript, React, Sass, Bootstrap, Git, and various other web technologies.',
+            'tech stack': 'My tech stack primarily includes HTML5, CSS3, JavaScript, and modern frameworks/libraries like React.',
+            
+            'experience': 'I have 3+ years of experience in frontend development, working on various projects for different clients and industries.',
+            'background': 'I have a background in web development with 3+ years of experience, specializing in creating responsive and interactive websites.',
+            
+            'resume': 'You can download my resume using the "Download Resume" button in the Home section.',
+            'cv': 'My CV is available for download in the Home section. Just click on the "Download Resume" button.',
+            
+            'services': 'I offer web development services including responsive website creation, web application development, and UI/UX improvements.',
+            'hire': 'I am available for freelance work and full-time opportunities. Please contact me through the Contact section for potential collaborations.',
+            'freelance': 'Yes, I am available for freelance projects. Feel free to contact me with your project details.',
+            
+            'thanks': 'You\'re welcome! Is there anything else you\'d like to know?',
+            'thank you': 'Happy to help! Let me know if you have any other questions.',
+            
+            'bye': 'Goodbye! Feel free to reach out if you have more questions later.',
+            'goodbye': 'Bye! Have a great day!',
+        };
+        
+        // Default responses for unknown queries
+        const defaultResponses = [
+            "I'm not sure I understand. Could you try rephrasing your question?",
+            "I don't have information on that. Would you like to know about my skills, projects, or contact information?",
+            "I don't have an answer for that. Try asking about my skills, experience, or projects instead.",
+            "I'm afraid I can't help with that. Would you like to know more about my work or skills?"
+        ];
+        
+        // Toggle bot visibility
+        helpBotButton.addEventListener('click', function() {
+            helpBot.classList.toggle('active');
+            if (helpBot.classList.contains('active')) {
+                helpBotInput.focus();
+            }
+        });
+        
+        // Close bot
+        helpBotCloseButton.addEventListener('click', function() {
+            helpBot.classList.remove('active');
+        });
+        
+        // Send message on enter key
+        helpBotInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        // Send message on button click
+        sendButton.addEventListener('click', function() {
+            sendMessage();
+        });
+        
+        // Function to send user message and get bot response
+        function sendMessage() {
+            const userMessage = helpBotInput.value.trim();
+            
+            if (userMessage === '') return;
+            
+            // Add user message to chat
+            addMessageToChat('user', userMessage);
+            
+            // Clear input
+            helpBotInput.value = '';
+            
+            // Simulate bot "typing" and then respond
+            setTimeout(() => {
+                const botResponse = getBotResponse(userMessage);
+                addMessageToChat('bot', botResponse);
+                
+                // Scroll to bottom
+                helpBotMessages.scrollTop = helpBotMessages.scrollHeight;
+            }, 1000);
+        }
+        
+        // Function to add message to chat
+        function addMessageToChat(sender, message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = sender === 'user' ? 'user-message' : 'bot-message';
+            
+            const avatarDiv = document.createElement('div');
+            avatarDiv.className = sender === 'user' ? 'user-avatar' : 'bot-avatar';
+            
+            const icon = document.createElement('i');
+            icon.className = sender === 'user' ? 'fas fa-user' : 'fas fa-robot';
+            avatarDiv.appendChild(icon);
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            
+            const paragraph = document.createElement('p');
+            paragraph.textContent = message;
+            contentDiv.appendChild(paragraph);
+            
+            messageDiv.appendChild(avatarDiv);
+            messageDiv.appendChild(contentDiv);
+            
+            helpBotMessages.appendChild(messageDiv);
+            
+            // Scroll to bottom
+            helpBotMessages.scrollTop = helpBotMessages.scrollHeight;
+        }
+        
+        // Function to get bot response based on user input
+        function getBotResponse(userInput) {
+            // Convert to lowercase for case-insensitive matching
+            const input = userInput.toLowerCase();
+            
+            // Check for matches in our response database
+            for (const key in botResponses) {
+                if (input.includes(key)) {
+                    return botResponses[key];
+                }
+            }
+            
+            // If no match found, return a random default response
+            const randomIndex = Math.floor(Math.random() * defaultResponses.length);
+            return defaultResponses[randomIndex];
+        }
     }
 });
