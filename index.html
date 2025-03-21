@@ -98,6 +98,15 @@
                 <li><a href="#contact" class="nav-link">Contact</a></li>
             </ul>
         </nav>
+        <div class="visitor-counter">
+            <div class="visitor-count">
+                <span id="visitor-count">0</span>
+                <span class="visitor-label">Visitors</span>
+            </div>
+            <a href="admin.html" class="admin-link" title="Admin Dashboard">
+                <i class="fas fa-chart-line"></i>
+            </a>
+        </div>
         <div class="hamburger">
             <div class="line"></div>
             <div class="line"></div>
@@ -124,9 +133,9 @@
                     <div class="hero-text">
                         <h1 class="reveal-text">
                             <span>Hi, I'm</span>
-                            <span class="gradient-text">John Doe</span>
+                            <span class="gradient-text">Pratik</span>
                         </h1>
-                        <h2 class="reveal-text delay-200">Frontend Developer</h2>
+                        <h2 class="reveal-text delay-200">Programmer</h2>
                         <p class="reveal-text delay-400">Turning ideas into interactive reality with clean, efficient code.</p>
                         <div class="hero-buttons reveal-text delay-600">
                             <a href="#projects" class="primary-btn">View My Work</a>
@@ -595,5 +604,17 @@
     <!-- JavaScript Files -->
     <script src="js/main.js"></script>
     <script src="js/animations.js"></script>
+    <script src="js/visitor-tracker.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.7.0/vanilla-tilt.min.js"></script>
+    <script>
+        // Initialize 3D tilt effect
+        VanillaTilt.init(document.querySelectorAll('.project-card, .skill-item, .stat-item'), {
+            max: 15,
+            speed: 400,
+            glare: true,
+            "max-glare": 0.3,
+            scale: 1.05
+        });
+    </script>
 </body>
 </html>

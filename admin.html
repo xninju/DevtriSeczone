@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Portfolio</title>
+    <meta name="description" content="Admin dashboard for visitor tracking and analytics">
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Admin CSS -->
+    <link rel="stylesheet" href="css/admin.css">
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Custom Cursor -->
+    <div class="cursor-outer"></div>
+    <div class="cursor-inner"></div>
+
+    <!-- Background Particles Canvas -->
+    <canvas id="particles-canvas"></canvas>
+
+    <!-- Admin Dashboard Container -->
+    <div class="admin-container">
+        <header class="admin-header">
+            <div class="admin-logo">
+                <a href="index.html">
+                    <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M15 5L25 20H5L15 5Z" stroke="#9D4EDD" stroke-width="2"/>
+                    </svg>
+                    <span>Portfolio Admin</span>
+                </a>
+            </div>
+            <a href="index.html" class="back-to-site">
+                <i class="fas fa-arrow-left"></i>
+                Back to Site
+            </a>
+        </header>
+
+        <main class="admin-main">
+            <div class="admin-sidebar">
+                <div class="admin-profile">
+                    <div class="admin-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="admin-info">
+                        <h3>Admin</h3>
+                        <p>Dashboard</p>
+                    </div>
+                </div>
+                <nav class="admin-nav">
+                    <ul>
+                        <li class="active"><a href="#dashboard"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                        <li><a href="#visitors"><i class="fas fa-users"></i> Visitors</a></li>
+                        <li><a href="#stats"><i class="fas fa-chart-bar"></i> Statistics</a></li>
+                    </ul>
+                </nav>
+            </div>
+
+            <div class="admin-content">
+                <!-- Dashboard Panel -->
+                <section id="dashboard" class="admin-panel active">
+                    <h2 class="panel-title">Dashboard</h2>
+                    <div class="stats-cards">
+                        <div class="stats-card">
+                            <div class="stats-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stats-info">
+                                <h3>Total Visitors</h3>
+                                <p id="total-visitors">0</p>
+                            </div>
+                        </div>
+                        <div class="stats-card">
+                            <div class="stats-icon">
+                                <i class="fas fa-eye"></i>
+                            </div>
+                            <div class="stats-info">
+                                <h3>Page Views</h3>
+                                <p id="total-page-views">0</p>
+                            </div>
+                        </div>
+                        <div class="stats-card">
+                            <div class="stats-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stats-info">
+                                <h3>Avg. Session</h3>
+                                <p id="avg-session-time">0s</p>
+                            </div>
+                        </div>
+                        <div class="stats-card">
+                            <div class="stats-icon">
+                                <i class="fas fa-mobile-alt"></i>
+                            </div>
+                            <div class="stats-info">
+                                <h3>Mobile Users</h3>
+                                <p id="mobile-users">0%</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="charts-container">
+                        <div class="chart-box">
+                            <h3>Traffic Overview</h3>
+                            <canvas id="traffic-chart"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <h3>Devices</h3>
+                            <canvas id="device-chart"></canvas>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Visitors Panel -->
+                <section id="visitors" class="admin-panel">
+                    <h2 class="panel-title">Visitors</h2>
+                    <div class="table-container">
+                        <table class="visitors-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Date / Time</th>
+                                    <th>Visits</th>
+                                    <th>Browser</th>
+                                    <th>Device</th>
+                                    <th>Screen Size</th>
+                                </tr>
+                            </thead>
+                            <tbody id="visitors-table-body">
+                                <!-- Visitors data will be dynamically inserted here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Statistics Panel -->
+                <section id="stats" class="admin-panel">
+                    <h2 class="panel-title">Statistics</h2>
+                    <div class="stats-overview">
+                        <h3>Session Duration Distribution</h3>
+                        <div class="stat-chart-container">
+                            <canvas id="session-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="stats-details">
+                        <div class="detail-card">
+                            <h3>Browser Distribution</h3>
+                            <div class="browser-stats" id="browser-stats">
+                                <!-- Browser stats will be inserted here -->
+                            </div>
+                        </div>
+                        <div class="detail-card">
+                            <h3>Page Popularity</h3>
+                            <div class="page-stats" id="page-stats">
+                                <!-- Page popularity stats will be inserted here -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <footer class="admin-footer">
+            <p>&copy; 2025 Portfolio Admin Dashboard. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <!-- JavaScript Files -->
+    <script src="js/animations.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>
