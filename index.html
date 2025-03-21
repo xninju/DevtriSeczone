@@ -98,6 +98,15 @@
                 <li><a href="#contact" class="nav-link">Contact</a></li>
             </ul>
         </nav>
+        <div class="visitor-counter">
+            <div class="visitor-count">
+                <span id="visitor-count">0</span>
+                <span class="visitor-label">Visitors</span>
+            </div>
+            <a href="admin.html" class="admin-link" title="Admin Dashboard">
+                <i class="fas fa-chart-line"></i>
+            </a>
+        </div>
         <div class="hamburger">
             <div class="line"></div>
             <div class="line"></div>
@@ -595,5 +604,17 @@
     <!-- JavaScript Files -->
     <script src="js/main.js"></script>
     <script src="js/animations.js"></script>
+    <script src="js/visitor-tracker.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.7.0/vanilla-tilt.min.js"></script>
+    <script>
+        // Initialize 3D tilt effect
+        VanillaTilt.init(document.querySelectorAll('.project-card, .skill-item, .stat-item'), {
+            max: 15,
+            speed: 400,
+            glare: true,
+            "max-glare": 0.3,
+            scale: 1.05
+        });
+    </script>
 </body>
 </html>
