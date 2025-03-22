@@ -493,6 +493,8 @@ section {
     border-radius: var(--border-radius-md);
     transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     z-index: 1;
+    overflow: hidden;
+    cursor: default;
 }
 
 .navbar a::before {
