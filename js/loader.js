@@ -1,58 +1,60 @@
-// Loader Script
+/**
+ * Custom loader with smooth transition to content
+ */
 document.addEventListener('DOMContentLoaded', () => {
-    // Set a fake minimum loading time of 3 seconds for better UX
-    const minLoadTime = 3000; // 3 seconds
-    const startTime = Date.now();
-    
-    // Get the loader elements
     const loaderContainer = document.querySelector('.loader-container');
     const progressBar = document.querySelector('.loader-progress-bar');
+    const content = document.querySelector('main');
+    const header = document.querySelector('header');
+    const mobileNav = document.querySelector('.mobile-nav');
+    const cursor = document.querySelector('.cursor');
+    const cursorFollower = document.querySelector('.cursor-follower');
+    const helpBot = document.querySelector('.help-bot');
     
-    // Simulate progress updates
+    // Make sure content elements are visible (but hidden by loader overlay)
+    if (content) content.style.opacity = '1';
+    if (header) header.style.opacity = '1';
+    if (mobileNav) mobileNav.style.opacity = '1';
+    if (cursor) cursor.style.opacity = '1';
+    if (cursorFollower) cursorFollower.style.opacity = '1';
+    if (helpBot) helpBot.style.opacity = '1';
+    
+    // Simulate faster loading progress
     let progress = 0;
-    const progressInterval = setInterval(() => {
-        if (progress < 90) {
-            progress += Math.random() * 10;
-            progressBar.style.width = `${Math.min(progress, 90)}%`;
-        }
-    }, 300);
-    
-    // Function to hide the loader
-    const hideLoader = () => {
-        // Ensure the progress bar reaches 100%
-        progressBar.style.width = '100%';
+    const interval = setInterval(() => {
+        progress += Math.random() * 15; // Faster progress
+        if (progress > 100) progress = 100;
         
-        // Add a small delay for the progress bar to reach 100% visually
-        setTimeout(() => {
-            loaderContainer.classList.add('hidden');
+        if (progressBar) {
+            progressBar.style.width = `${progress}%`;
+        }
+        
+        if (progress === 100) {
+            clearInterval(interval);
             
-            // Remove the loader from the DOM after the transition
+            // Add a small delay before showing content
             setTimeout(() => {
-                loaderContainer.remove();
-                document.body.style.overflow = 'auto'; // Enable scrolling
-            }, 600); // Same as the transition time in CSS
-            
-            clearInterval(progressInterval);
-        }, 400);
-    };
-    
-    // Handle page load completion
-    window.addEventListener('load', () => {
-        const loadTime = Date.now() - startTime;
-        
-        if (loadTime < minLoadTime) {
-            // If the page loaded too quickly, wait until the minimum time is reached
-            setTimeout(hideLoader, minLoadTime - loadTime);
-        } else {
-            // If loading took longer than the minimum time, hide immediately
-            hideLoader();
+                // Fade out loader
+                if (loaderContainer) {
+                    loaderContainer.classList.add('fade-out');
+                }
+                
+                // After short loader animation, show content
+                setTimeout(() => {
+                    if (loaderContainer) loaderContainer.style.display = 'none';
+                    
+                    // Make sure all content is visible and animated
+                    document.body.classList.add('content-loaded');
+                    
+                    // Trigger any animations that depend on content being visible
+                    if (typeof initParticleBackground === 'function') {
+                        initParticleBackground();
+                    }
+                    if (typeof initRevealAnimations === 'function') {
+                        initRevealAnimations();
+                    }
+                }, 700); // Shorter transition time
+            }, 200); // Very small delay after reaching 100%
         }
-    });
-    
-    // Fallback - hide loader after 8 seconds even if page hasn't fully loaded
-    setTimeout(() => {
-        if (document.querySelector('.loader-container')) {
-            hideLoader();
-        }
-    }, 8000);
+    }, 50); // Update progress faster
 });
