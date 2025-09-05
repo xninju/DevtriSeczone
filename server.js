@@ -160,6 +160,25 @@ app.post('/api/contact', async (req, res) => {
     }
 });
 
+app.get('/api/reviews', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT name, message, timestamp
+            FROM contact_submissions
+            ORDER BY timestamp DESC
+            LIMIT 4
+        `);
+        res.json(result.rows.map(row => ({
+            name: row.name,
+            message: row.message,
+            timestamp: parseInt(row.timestamp)
+        })));
+    } catch (error) {
+        console.error('Error fetching reviews:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 // Admin Routes
 app.get('/api/admin/total-visitors', async (req, res) => {
     try {
