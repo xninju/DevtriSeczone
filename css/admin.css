@@ -13,6 +13,11 @@
     --transition-medium: all 0.3s ease;
 }
 
+body {
+    font-family: "Poppins", sans-serif;
+    background: var(--dark-bg);
+    color: var(--light-text);
+}
 html {
     scroll-behavior: smooth;
     font-size: 62.5%; /* Base font-size: 10px for easier rem calculations */
@@ -234,7 +239,7 @@ html {
     grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
     gap: 2rem;
     margin-bottom: 3.2rem;
-    max-width: 100%; /* Removed fixed 700px */
+    width: 800px; /* Removed fixed 700px */
 }
 
 .stats-card {
@@ -289,7 +294,7 @@ html {
     grid-template-columns: 1fr;
     gap: 2.4rem;
     margin-bottom: 3.2rem;
-    max-width: 100%; /* Removed fixed 500px */
+    width: 800px;
 }
 
 .chart-box {
@@ -317,7 +322,7 @@ canvas {
     padding: 2rem;
     box-shadow: 0 0.8rem 1.6rem rgba(0, 0, 0, 0.1);
     overflow-x: auto;
-    max-width: 100%; /* Removed max-content */
+    width: 800px;
 }
 
 .visitors-table, .contact-logs-table {
@@ -368,7 +373,7 @@ canvas {
     padding: 2rem;
     margin-bottom: 2.4rem;
     box-shadow: 0 0.8rem 1.6rem rgba(0, 0, 0, 0.1);
-    max-width: 100%; /* Removed fixed 700px */
+    width: 800px;
 }
 
 .stats-overview h3 {
@@ -386,7 +391,7 @@ canvas {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(24rem, 1fr));
     gap: 2.4rem;
-    max-width: 100%; /* Removed fixed 900px */
+    width: 800px;
 }
 
 .detail-card {
