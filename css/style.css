@@ -1348,6 +1348,19 @@ img[loading="lazy"].loaded {
   color: var(--light-text);
 }
 
+.submit-btn {
+    padding: 12px 30px;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: var(--border-radius-sm);
+    font-weight: 600;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    transition: var(--transition-medium);
+    cursor: pointer;
+}
 .submit-btn:hover {
     background-color: var(--primary-dark);
 }
