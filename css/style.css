@@ -1375,6 +1375,45 @@ img[loading="lazy"].loaded {
   }
 }
 
+.form-group {
+    position: relative;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 15px;
+    padding-left: 45px;
+    background-color: var(--bg-color-lighter);
+    color: var(--text-color);
+    border-radius: var(--border-radius-sm);
+    transition: var(--transition-medium);
+}
+
+.form-group textarea {
+    min-height: 150px;
+    resize: vertical;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    box-shadow: 0 0 0 2px var(--primary-color);
+}
+
+.form-icon {
+    position: absolute;
+    top: 50%;
+    left: 15px;
+    transform: translateY(-50%);
+    font-size: 1.6rem;
+    color: var(--primary-color);
+}
+
+.form-group textarea + .form-icon {
+    top: 25px;
+    transform: none;
+}
+
 /* =================================================
    Mobile Navigation Toggle Styles - START
 ================================================= */
