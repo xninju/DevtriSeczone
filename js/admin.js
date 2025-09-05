@@ -1,41 +1,34 @@
-/*---------------------------------------------
- * Admin Dashboard JavaScript
- * Displays visitor data and analytics
- *--------------------------------------------*/
-
 document.addEventListener('DOMContentLoaded', function() {
     'use strict';
-    
+
     // DOM elements
     const totalVisitorsElement = document.getElementById('total-visitors');
     const totalPageViewsElement = document.getElementById('total-page-views');
-    const avgSessionTimeElement = document.getElementById('avg-session-time');
     const mobileUsersElement = document.getElementById('mobile-users');
+    const pcUsersElement = document.getElementById('pc-users');
     const visitorsTableBody = document.getElementById('visitors-table-body');
     const browserStatsElement = document.getElementById('browser-stats');
     const pageStatsElement = document.getElementById('page-stats');
     const navItems = document.querySelectorAll('.admin-nav li');
     const adminPanels = document.querySelectorAll('.admin-panel');
-    
+    const sidebarToggle = document.querySelector('.sidebar-toggle');
+    const sidebar = document.querySelector('.admin-sidebar');
+
     // API endpoint
-    const API_BASE_URL = 'http://' + window.location.hostname + ':3000/api';
-    
+    const API_BASE_URL = '/api';
+
     // Initialize dashboard
     updateStats();
-    
+
     // Set up auto-refresh every 30 seconds
     setInterval(updateStats, 30000);
-    
+
     // Set up navigation
     navItems.forEach(item => {
         item.addEventListener('click', function() {
-            const targetId = this.querySelector('a').getAttribute('href').substring(1);
-            
-            // Update active nav item
             navItems.forEach(navItem => navItem.classList.remove('active'));
             this.classList.add('active');
-            
-            // Show corresponding panel
+            const targetId = this.querySelector('a').getAttribute('href').substring(1);
             adminPanels.forEach(panel => {
                 panel.classList.remove('active');
                 if (panel.id === targetId) {
@@ -44,133 +37,110 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
-    
+
+    // Mobile sidebar toggle
+    if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('active');
+        });
+    }
+
     /**
      * Update all statistics on the dashboard
      */
     function updateStats() {
         // Show loading state
         if (totalVisitorsElement) totalVisitorsElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        
-        // Fetch data from API
-        fetch(`${API_BASE_URL}/admin/data`)
-            .then(response => response.json())
-            .then(data => {
-                // Process the data
-                const visitors = data.visitors || [];
-                const pageViews = data.pageViews || [];
-                const sessionDurations = data.sessionDurations || [];
-                
+        if (totalPageViewsElement) totalPageViewsElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        if (mobileUsersElement) mobileUsersElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        if (pcUsersElement) pcUsersElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+        // Fetch all stats concurrently
+        Promise.all([
+            fetch(`${API_BASE_URL}/admin/total-visitors`).then(res => res.json()),
+            fetch(`${API_BASE_URL}/admin/total-page-views`).then(res => res.json()),
+            fetch(`${API_BASE_URL}/admin/mobile-users`).then(res => res.json()),
+            fetch(`${API_BASE_URL}/admin/pc-users`).then(res => res.json()),
+            fetch(`${API_BASE_URL}/admin/recent-visitors`).then(res => res.json()),
+            fetch(`${API_BASE_URL}/admin/browser-stats`).then(res => res.json()),
+            fetch(`${API_BASE_URL}/admin/page-stats`).then(res => res.json()),
+            fetch(`${API_BASE_URL}/admin/device-stats`).then(res => res.json()),
+            fetch(`${API_BASE_URL}/admin/session-buckets`).then(res => res.json())
+        ])
+            .then(([totalVisitors, totalPageViews, mobileUsers, pcUsers, recentVisitors, browserStats, pageStats, deviceStats, sessionBuckets]) => {
                 // Update UI with the data
-                updateDashboardWithData(visitors, pageViews, sessionDurations);
+                updateDashboardWithData(
+                    totalVisitors.count,
+                    totalPageViews.count,
+                    mobileUsers.percentage,
+                    pcUsers.percentage,
+                    recentVisitors,
+                    browserStats,
+                    pageStats,
+                    deviceStats,
+                    sessionBuckets
+                );
             })
             .catch(error => {
                 console.error('Error fetching admin data:', error);
-                
-                // Fallback to localStorage data if API fails
+                // Fallback to localStorage
                 const visitors = JSON.parse(localStorage.getItem('portfolio_visitors')) || [];
                 const pageViews = JSON.parse(localStorage.getItem('portfolio_pageviews')) || [];
                 const sessionDurations = JSON.parse(localStorage.getItem('portfolio_sessionDurations')) || [];
-                
-                // Update UI with localStorage data
-                updateDashboardWithData(visitors, pageViews, sessionDurations);
+                updateDashboardWithData(
+                    visitors.length,
+                    pageViews.length,
+                    visitors.length > 0 ? Math.round((visitors.filter(v => v.device === 'Mobile').length / visitors.length) * 100) : 0,
+                    visitors.length > 0 ? Math.round((visitors.filter(v => v.device === 'Desktop').length / visitors.length) * 100) : 0,
+                    visitors,
+                    computeBrowserStats(visitors),
+                    computePageStats(pageViews),
+                    computeDeviceStats(visitors),
+                    computeSessionBuckets(sessionDurations)
+                );
             });
     }
-    
+
     /**
      * Update dashboard with the provided data
      */
-    function updateDashboardWithData(visitors, pageViews, sessionDurations) {
-        
-        // Update summary stats
-        updateSummaryStats(visitors, pageViews, sessionDurations);
-        
+    function updateDashboardWithData(totalVisitors, totalPageViews, mobilePercentage, pcPercentage, visitors, browserStats, pageStats, deviceStats, sessionBuckets) {
+        // Update summary stats with pulse animation
+        if (totalVisitorsElement) {
+            totalVisitorsElement.textContent = totalVisitors;
+            totalVisitorsElement.closest('.stats-card').classList.add('pulse');
+            setTimeout(() => totalVisitorsElement.closest('.stats-card').classList.remove('pulse'), 1000);
+        }
+
+        if (totalPageViewsElement) {
+            totalPageViewsElement.textContent = totalPageViews;
+            totalPageViewsElement.closest('.stats-card').classList.add('pulse');
+            setTimeout(() => totalPageViewsElement.closest('.stats-card').classList.remove('pulse'), 1000);
+        }
+
+        if (mobileUsersElement) {
+            mobileUsersElement.textContent = `${mobilePercentage}%`;
+            mobileUsersElement.closest('.stats-card').classList.add('pulse');
+            setTimeout(() => mobileUsersElement.closest('.stats-card').classList.remove('pulse'), 1000);
+        }
+
+        if (pcUsersElement) {
+            pcUsersElement.textContent = `${pcPercentage}%`;
+            pcUsersElement.closest('.stats-card').classList.add('pulse');
+            setTimeout(() => pcUsersElement.closest('.stats-card').classList.remove('pulse'), 1000);
+        }
+
         // Populate visitors table
         populateVisitorsTable(visitors);
-        
-        // Initialize charts
-        initCharts(visitors, pageViews, sessionDurations);
-        
+
         // Update browser and page stats
-        updateBrowserStats(visitors);
-        updatePageStats(pageViews);
+        updateBrowserStats(browserStats);
+        updatePageStats(pageStats);
+
+        // Initialize charts
+        initCharts(deviceStats, sessionBuckets);
     }
-    
-    /**
-     * Update the summary statistics at the top of the dashboard
-     */
-    function updateSummaryStats(visitors, pageViews, sessionDurations) {
-        // Total visitors
-        totalVisitorsElement.textContent = visitors.length;
-        
-        // Total page views
-        totalPageViewsElement.textContent = pageViews.length;
-        
-        // Average session time
-        const avgSessionTime = sessionDurations.length > 0 
-            ? Math.round(sessionDurations.reduce((sum, duration) => sum + duration, 0) / sessionDurations.length)
-            : 0;
-        avgSessionTimeElement.textContent = formatTime(avgSessionTime);
-        
-        // Mobile users percentage
-        const mobileCount = visitors.filter(visitor => visitor.device === 'Mobile').length;
-        const mobilePercentage = visitors.length > 0 
-            ? Math.round((mobileCount / visitors.length) * 100) 
-            : 0;
-        mobileUsersElement.textContent = `${mobilePercentage}%`;
-    }
-    
-    /**
-     * Populate the visitors table with data
-     */
-    function populateVisitorsTable(visitors) {
-        // Clear existing table content
-        visitorsTableBody.innerHTML = '';
-        
-        // Sort visitors by timestamp (most recent first)
-        const sortedVisitors = [...visitors].sort((a, b) => b.timestamp - a.timestamp);
-        
-        // Add each visitor to the table
-        sortedVisitors.forEach(visitor => {
-            const row = document.createElement('tr');
-            
-            // Create visitor ID cell (shortened for display)
-            const idCell = document.createElement('td');
-            idCell.textContent = visitor.id.substring(0, 8) + '...';
-            
-            // Create date cell
-            const dateCell = document.createElement('td');
-            dateCell.textContent = formatDate(new Date(visitor.timestamp));
-            
-            // Create visits cell
-            const visitsCell = document.createElement('td');
-            visitsCell.textContent = visitor.visits;
-            
-            // Create browser cell
-            const browserCell = document.createElement('td');
-            browserCell.textContent = visitor.browser || 'Unknown';
-            
-            // Create device cell
-            const deviceCell = document.createElement('td');
-            deviceCell.textContent = visitor.device || 'Unknown';
-            
-            // Create screen size cell
-            const screenCell = document.createElement('td');
-            screenCell.textContent = visitor.screenSize || 'Unknown';
-            
-            // Add cells to row
-            row.appendChild(idCell);
-            row.appendChild(dateCell);
-            row.appendChild(visitsCell);
-            row.appendChild(browserCell);
-            row.appendChild(deviceCell);
-            row.appendChild(screenCell);
-            
-            // Add row to table
-            visitorsTableBody.appendChild(row);
-        });
-    }
-    
+
     /**
      * Format a date object to a readable string
      */
@@ -184,64 +154,29 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         return date.toLocaleDateString('en-US', options);
     }
-    
-    /**
-     * Format time in seconds to a readable string
-     */
-    function formatTime(seconds) {
-        if (seconds < 60) {
-            return `${seconds}s`;
-        } else if (seconds < 3600) {
-            const minutes = Math.floor(seconds / 60);
-            const remainingSeconds = seconds % 60;
-            return `${minutes}m ${remainingSeconds}s`;
-        } else {
-            const hours = Math.floor(seconds / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
-            return `${hours}h ${minutes}m`;
-        }
-    }
-    
+
     /**
      * Initialize all charts
      */
-    function initCharts(visitors, pageViews, sessionDurations) {
-        initDeviceChart(visitors);
-        initSessionChart(sessionDurations);
+    function initCharts(deviceStats, sessionBuckets) {
+        initDeviceChart(deviceStats);
+        initSessionChart(sessionBuckets);
     }
-    
+
     /**
      * Initialize device distribution chart
      */
-    function initDeviceChart(visitors) {
+    function initDeviceChart(deviceStats) {
         const deviceChartCanvas = document.getElementById('device-chart');
-        
-        // Count devices
-        const deviceCounts = {
-            'Desktop': 0,
-            'Mobile': 0,
-            'Tablet': 0
-        };
-        
-        visitors.forEach(visitor => {
-            const device = visitor.device || 'Unknown';
-            deviceCounts[device] = (deviceCounts[device] || 0) + 1;
-        });
-        
-        // Create chart
         if (deviceChartCanvas) {
             const ctx = deviceChartCanvas.getContext('2d');
             new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: Object.keys(deviceCounts),
+                    labels: deviceStats.map(stat => stat.device),
                     datasets: [{
-                        data: Object.values(deviceCounts),
-                        backgroundColor: [
-                            '#9D4EDD',
-                            '#5A189A',
-                            '#3C096C'
-                        ],
+                        data: deviceStats.map(stat => stat.count),
+                        backgroundColor: ['#9D4EDD', '#C4A1FF', '#5A189A'],
                         borderColor: '#121212',
                         borderWidth: 2
                     }]
@@ -252,56 +187,28 @@ document.addEventListener('DOMContentLoaded', function() {
                     plugins: {
                         legend: {
                             position: 'bottom',
-                            labels: {
-                                color: '#CCCCCC',
-                                padding: 15
-                            }
+                            labels: { color: '#CCCCCC', padding: 15 }
                         }
                     }
                 }
             });
         }
     }
-    
+
     /**
      * Initialize session duration chart
      */
-    function initSessionChart(sessionDurations) {
+    function initSessionChart(sessionBuckets) {
         const sessionChartCanvas = document.getElementById('session-chart');
-        
-        // Group session durations into buckets
-        const durationBuckets = {
-            '< 1 min': 0,
-            '1-3 min': 0,
-            '3-5 min': 0,
-            '5-10 min': 0,
-            '> 10 min': 0
-        };
-        
-        sessionDurations.forEach(duration => {
-            if (duration < 60) {
-                durationBuckets['< 1 min']++;
-            } else if (duration < 180) {
-                durationBuckets['1-3 min']++;
-            } else if (duration < 300) {
-                durationBuckets['3-5 min']++;
-            } else if (duration < 600) {
-                durationBuckets['5-10 min']++;
-            } else {
-                durationBuckets['> 10 min']++;
-            }
-        });
-        
-        // Create chart
         if (sessionChartCanvas) {
             const ctx = sessionChartCanvas.getContext('2d');
             new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: Object.keys(durationBuckets),
+                    labels: sessionBuckets.map(stat => stat.bucket),
                     datasets: [{
                         label: 'Number of Sessions',
-                        data: Object.values(durationBuckets),
+                        data: sessionBuckets.map(stat => stat.count),
                         backgroundColor: '#9D4EDD',
                         borderColor: '#5A189A',
                         borderWidth: 1
@@ -311,132 +218,167 @@ document.addEventListener('DOMContentLoaded', function() {
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                color: '#CCCCCC'
-                            },
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.05)'
-                            }
-                        },
-                        x: {
-                            ticks: {
-                                color: '#CCCCCC'
-                            },
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.05)'
-                            }
-                        }
+                        y: { beginAtZero: true, ticks: { color: '#CCCCCC' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+                        x: { ticks: { color: '#CCCCCC' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } }
                     },
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#CCCCCC'
-                            }
-                        }
-                    }
+                    plugins: { legend: { labels: { color: '#CCCCCC' } } }
                 }
             });
         }
     }
-    
+
+    /**
+     * Populate the visitors table with data
+     */
+    function populateVisitorsTable(visitors) {
+        visitorsTableBody.innerHTML = '';
+
+        const sortedVisitors = [...visitors].sort((a, b) => b.timestamp - a.timestamp);
+
+        sortedVisitors.forEach(visitor => {
+            const row = document.createElement('tr');
+
+            const idCell = document.createElement('td');
+            idCell.textContent = visitor.id.substring(0, 8) + '...';
+
+            const dateCell = document.createElement('td');
+            dateCell.textContent = formatDate(new Date(visitor.timestamp));
+
+            const visitsCell = document.createElement('td');
+            visitsCell.textContent = visitor.visits;
+
+            const browserCell = document.createElement('td');
+            browserCell.textContent = visitor.browser || 'Unknown';
+
+            const deviceCell = document.createElement('td');
+            deviceCell.textContent = visitor.device || 'Unknown';
+
+            const screenCell = document.createElement('td');
+            screenCell.textContent = visitor.screenSize || 'Unknown';
+
+            row.appendChild(idCell);
+            row.appendChild(dateCell);
+            row.appendChild(visitsCell);
+            row.appendChild(browserCell);
+            row.appendChild(deviceCell);
+            row.appendChild(screenCell);
+
+            visitorsTableBody.appendChild(row);
+        });
+    }
+
     /**
      * Update browser distribution stats
      */
-    function updateBrowserStats(visitors) {
-        // Count browsers
+    function updateBrowserStats(browserStats) {
+        browserStatsElement.innerHTML = '';
+        const total = browserStats.reduce((sum, stat) => sum + stat.count, 0);
+        browserStats.forEach(stat => {
+            const percentage = total > 0 ? Math.round((stat.count / total) * 100) : 0;
+            const statItem = document.createElement('div');
+            statItem.className = 'stat-item';
+            let iconClass = 'fas fa-globe';
+            if (stat.browser === 'Chrome') iconClass = 'fab fa-chrome';
+            else if (stat.browser === 'Firefox') iconClass = 'fab fa-firefox';
+            else if (stat.browser === 'Safari') iconClass = 'fab fa-safari';
+            else if (stat.browser === 'Edge') iconClass = 'fab fa-edge';
+            else if (stat.browser === 'Opera') iconClass = 'fab fa-opera';
+            else if (stat.browser === 'Internet Explorer') iconClass = 'fab fa-internet-explorer';
+            statItem.innerHTML = `
+                <div class="stat-name"><i class="${iconClass}"></i> ${stat.browser}</div>
+                <div class="stat-value">${percentage}%</div>
+                <div class="progress-container"><div class="progress-bar" style="width: ${percentage}%"></div></div>
+            `;
+            browserStatsElement.appendChild(statItem);
+        });
+    }
+
+    /**
+     * Update page popularity stats
+     */
+    function updatePageStats(pageStats) {
+        pageStatsElement.innerHTML = '';
+        const total = pageStats.reduce((sum, stat) => sum + stat.count, 0);
+        pageStats.forEach(stat => {
+            const percentage = total > 0 ? Math.round((stat.count / total) * 100) : 0;
+            const statItem = document.createElement('div');
+            statItem.className = 'stat-item';
+            let pageName = stat.page === '/' ? 'Home' : stat.page.split('/').pop().split('.')[0];
+            pageName = pageName.charAt(0).toUpperCase() + pageName.slice(1);
+            statItem.innerHTML = `
+                <div class="stat-name"><i class="fas fa-file"></i> ${pageName}</div>
+                <div class="stat-value">${stat.count} views</div>
+                <div class="progress-container"><div class="progress-bar" style="width: ${percentage}%"></div></div>
+            `;
+            pageStatsElement.appendChild(statItem);
+        });
+    }
+
+    /**
+     * Helper functions for localStorage fallback
+     */
+    function computeBrowserStats(visitors) {
         const browserCounts = {};
-        
         visitors.forEach(visitor => {
             const browser = visitor.browser || 'Unknown';
             browserCounts[browser] = (browserCounts[browser] || 0) + 1;
         });
-        
-        // Sort browsers by count (descending)
-        const sortedBrowsers = Object.entries(browserCounts)
-            .sort((a, b) => b[1] - a[1]);
-        
-        // Clear existing content
-        browserStatsElement.innerHTML = '';
-        
-        // Create browser stat items
-        sortedBrowsers.forEach(([browser, count]) => {
-            const percentage = visitors.length > 0 
-                ? Math.round((count / visitors.length) * 100) 
-                : 0;
-            
-            const statItem = document.createElement('div');
-            statItem.className = 'stat-item';
-            
-            // Browser icon based on name
-            let iconClass = 'fas fa-globe';
-            if (browser === 'Chrome') iconClass = 'fab fa-chrome';
-            else if (browser === 'Firefox') iconClass = 'fab fa-firefox';
-            else if (browser === 'Safari') iconClass = 'fab fa-safari';
-            else if (browser === 'Edge') iconClass = 'fab fa-edge';
-            else if (browser === 'Opera') iconClass = 'fab fa-opera';
-            else if (browser === 'Internet Explorer') iconClass = 'fab fa-internet-explorer';
-            
-            statItem.innerHTML = `
-                <div class="stat-name">
-                    <i class="${iconClass}"></i>
-                    ${browser}
-                </div>
-                <div class="stat-value">${percentage}%</div>
-                <div class="progress-container">
-                    <div class="progress-bar" style="width: ${percentage}%"></div>
-                </div>
-            `;
-            
-            browserStatsElement.appendChild(statItem);
-        });
+        return Object.entries(browserCounts).map(([browser, count]) => ({ browser, count }));
     }
-    
-    /**
-     * Update page popularity stats
-     */
-    function updatePageStats(pageViews) {
-        // Count page views by path
+
+    function computePageStats(pageViews) {
         const pageCounts = {};
-        
         pageViews.forEach(view => {
             const page = view.page || '/';
             pageCounts[page] = (pageCounts[page] || 0) + 1;
         });
-        
-        // Sort pages by count (descending)
-        const sortedPages = Object.entries(pageCounts)
-            .sort((a, b) => b[1] - a[1]);
-        
-        // Clear existing content
-        pageStatsElement.innerHTML = '';
-        
-        // Create page stat items
-        sortedPages.forEach(([page, count]) => {
-            const percentage = pageViews.length > 0 
-                ? Math.round((count / pageViews.length) * 100) 
-                : 0;
-            
-            const statItem = document.createElement('div');
-            statItem.className = 'stat-item';
-            
-            // Get page name from path
-            let pageName = page === '/' ? 'Home' : page.split('/').pop().split('.')[0];
-            pageName = pageName.charAt(0).toUpperCase() + pageName.slice(1); // Capitalize
-            
-            statItem.innerHTML = `
-                <div class="stat-name">
-                    <i class="fas fa-file"></i>
-                    ${pageName}
-                </div>
-                <div class="stat-value">${count} views</div>
-                <div class="progress-container">
-                    <div class="progress-bar" style="width: ${percentage}%"></div>
-                </div>
-            `;
-            
-            pageStatsElement.appendChild(statItem);
-        });
+        return Object.entries(pageCounts).map(([page, count]) => ({ page, count }));
     }
+
+    function computeDeviceStats(visitors) {
+        const deviceCounts = {};
+        visitors.forEach(visitor => {
+            const device = visitor.device || 'Unknown';
+            deviceCounts[device] = (deviceCounts[device] || 0) + 1;
+        });
+        return Object.entries(deviceCounts).map(([device, count]) => ({ device, count }));
+    }
+
+    function computeSessionBuckets(sessionDurations) {
+        const buckets = {
+            '< 1 min': 0,
+            '1-3 min': 0,
+            '3-5 min': 0,
+            '5-10 min': 0,
+            '> 10 min': 0
+        };
+        sessionDurations.forEach(duration => {
+            if (duration.duration < 60) buckets['< 1 min']++;
+            else if (duration.duration < 180) buckets['1-3 min']++;
+            else if (duration.duration < 300) buckets['3-5 min']++;
+            else if (duration.duration < 600) buckets['5-10 min']++;
+            else buckets['> 10 min']++;
+        });
+        return Object.entries(buckets).map(([bucket, count]) => ({ bucket, count }));
+    }
+
+    /**
+     * Clean up old data
+     */
+    window.cleanupOldData = function() {
+        fetch(`${API_BASE_URL}/admin/cleanup`, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Old data cleaned up successfully');
+                    updateStats();
+                } else {
+                    alert('Failed to clean up data');
+                }
+            })
+            .catch(error => {
+                console.error('Error cleaning up data:', error);
+                alert('Error cleaning up data');
+            });
+    };
 });
