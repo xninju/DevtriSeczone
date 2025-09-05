@@ -1341,7 +1341,6 @@ img[loading="lazy"].loaded {
 #contact-form textarea {
   margin-left: 35px;
   width: 92%;
-  width: 100%;
   padding: 10px;
   margin-bottom: 15px;
   border: 1px solid rgba(255, 255, 255, 0.1);
