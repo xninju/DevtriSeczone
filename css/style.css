@@ -1348,20 +1348,32 @@ img[loading="lazy"].loaded {
   color: var(--light-text);
 }
 
-#contact-form button {
-  width: 100%;
-  padding: 10px;
-  background: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background 0.3s ease;
+.submit-btn:hover {
+    background-color: var(--primary-dark);
 }
 
-#contact-form button:hover {
-  background: var(--hover-color);
+.submit-btn i {
+    transition: var(--transition-medium);
 }
+
+.submit-btn:hover i {
+    transform: translateX(5px);
+}
+
+.form-message { padding: 15px; 
+               border-radius: 4px; 
+               margin-top: 10px; 
+}
+.form-message.success { 
+    background-color: rgba(40, 167, 69, 0.1); 
+    border-left: 4px solid #28a745; 
+}
+
+.form-message.error { 
+    background-color: rgba(220, 53, 69, 0.1); 
+    border-left: 4px solid #dc3545; 
+}
+
 
 @media (max-width: 768px) {
   #contact-form {
