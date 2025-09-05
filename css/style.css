@@ -1314,10 +1314,10 @@ img[loading="lazy"].loaded {
 }
 
 #contact-form {
-  position: fixed;
+  position: relative;
   top: 50%;
   transform: translateY(-50%);
-  width: 300px;
+  width: auto;
   background: var(--card-bg);
   padding: 20px;
   border-radius: 10px;
