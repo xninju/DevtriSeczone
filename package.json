@@ -18,7 +18,7 @@
   "devDependencies": {
     "nodemon": "^2.0.15"
   },
-  "author": "Your Name",
+  "author": "Pratik",
   "license": "ISC",
   "engines": {
     "node": ">=14.x"
