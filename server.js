@@ -15,8 +15,8 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
 app.use('/api/', rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100 // 100 requests per IP
+    windowMs: 15 * 60 * 1000,
+    max: 100
 }));
 
 const pool = new Pool({
@@ -175,6 +175,23 @@ app.get('/api/reviews', async (req, res) => {
         })));
     } catch (error) {
         console.error('Error fetching reviews:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+app.delete('/api/contact/delete/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await pool.query(
+            'DELETE FROM contact_submissions WHERE id = $1 RETURNING id',
+            [id]
+        );
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: 'Submission not found' });
+        }
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting contact submission:', error);
         res.status(500).json({ error: 'Server error' });
     }
 });
