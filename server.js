@@ -1,353 +1,460 @@
-const express = require('express');
-const { Pool } = require('pg');
-const cors = require('cors');
-const dotenv = require('dotenv');
-const path = require('path');
-const rateLimit = require('express-rate-limit');
-const { v4: uuidv4 } = require('uuid');
-
-dotenv.config();
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-app.use(cors());
-app.use(express.json());
-app.use(express.static(path.join(__dirname)));
-
-app.use('/api/', rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100 // 100 requests per IP
-}));
-
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
-});
-
-async function initializeDatabase() {
-    try {
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS visitors (
-                id UUID PRIMARY KEY,
-                timestamp BIGINT NOT NULL,
-                visits INTEGER DEFAULT 1,
-                browser VARCHAR(100),
-                device VARCHAR(100),
-                screen_size VARCHAR(100)
-            );
-        `);
-        await pool.query(`CREATE INDEX IF NOT EXISTS idx_visitors_timestamp ON visitors (timestamp)`);
-
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS page_views (
-                id SERIAL PRIMARY KEY,
-                visitor_id UUID REFERENCES visitors(id) ON DELETE CASCADE,
-                page VARCHAR(255) NOT NULL,
-                timestamp BIGINT NOT NULL
-            );
-        `);
-        await pool.query(`CREATE INDEX IF NOT EXISTS idx_page_views_visitor_id ON page_views (visitor_id)`);
-        await pool.query(`CREATE INDEX IF NOT EXISTS idx_page_views_timestamp ON page_views (timestamp)`);
-
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS session_durations (
-                id SERIAL PRIMARY KEY,
-                visitor_id UUID REFERENCES visitors(id) ON DELETE CASCADE,
-                duration INTEGER NOT NULL,
-                timestamp BIGINT NOT NULL
-            );
-        `);
-        await pool.query(`CREATE INDEX IF NOT EXISTS idx_session_durations_visitor_id ON session_durations (visitor_id)`);
-        await pool.query(`CREATE INDEX IF NOT EXISTS idx_session_durations_timestamp ON session_durations (timestamp)`);
-
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS contact_submissions (
-                id UUID PRIMARY KEY,
-                name VARCHAR(100) NOT NULL,
-                email VARCHAR(255) NOT NULL,
-                subject VARCHAR(255) NOT NULL,
-                message TEXT NOT NULL,
-                timestamp BIGINT NOT NULL
-            );
-        `);
-        await pool.query(`CREATE INDEX IF NOT EXISTS idx_contact_submissions_timestamp ON contact_submissions (timestamp)`);
-
-        console.log('Database initialized successfully');
-    } catch (error) {
-        console.error('Error initializing database:', error);
-        throw error;
-    }
-}
-
-// API Routes
-app.get('/api/visitors/count', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT COUNT(*) AS count FROM page_views');
-        res.json({ count: parseInt(result.rows[0].count) });
-    } catch (error) {
-        console.error('Error getting page view count:', error);
-        res.status(500).json({ error: 'Server error' });
-    }
-});
-
-app.post('/api/visitors', async (req, res) => {
-    const { id, timestamp, browser, device, screenSize } = req.body;
-    try {
-        await pool.query(`
-            INSERT INTO visitors (id, timestamp, visits, browser, device, screen_size)
-            VALUES ($1, $2, 1, $3, $4, $5)
-            ON CONFLICT (id)
-            DO UPDATE SET
-                timestamp = EXCLUDED.timestamp,
-                visits = visitors.visits + 1,
-                browser = EXCLUDED.browser,
-                device = EXCLUDED.device,
-                screen_size = EXCLUDED.screen_size
-        `, [id, timestamp, browser, device, screenSize]);
-        res.json({ success: true });
-    } catch (error) {
-        console.error('Error recording visitor:', error);
-        res.status(500).json({ error: 'Server error' });
-    }
-});
-
-app.post('/api/pageviews', async (req, res) => {
-    const { visitorId, page, timestamp } = req.body;
-    try {
-        await pool.query(
-            'INSERT INTO page_views (visitor_id, page, timestamp) VALUES ($1, $2, $3)',
-            [visitorId, page, timestamp]
-        );
-        res.json({ success: true });
-    } catch (error) {
-        console.error('Error recording page view:', error);
-        res.status(500).json({ error: 'Server error' });
-    }
-});
-
-app.post('/api/sessions', async (req, res) => {
-    const { visitorId, duration, timestamp } = req.body;
-    try {
-        await pool.query(
-            'INSERT INTO session_durations (visitor_id, duration, timestamp) VALUES ($1, $2, $3)',
-            [visitorId, duration, timestamp]
-        );
-        res.json({ success: true });
-    } catch (error) {
-        console.error('Error recording session duration:', error);
-        res.status(500).json({ error: 'Server error' });
-    }
-});
-
-app.post('/api/contact', async (req, res) => {
-    const { name, email, subject, message } = req.body;
-    const id = uuidv4();
-    const timestamp = Date.now();
-
-    if (!name || !email || !subject || !message) {
-        return res.status(400).json({ message: 'All fields are required' });
-    }
-
-    try {
-        await pool.query(
-            'INSERT INTO contact_submissions (id, name, email, subject, message, timestamp) VALUES ($1, $2, $3, $4, $5, $6)',
-            [id, name, email, subject, message, timestamp]
-        );
-        res.json({ success: true });
-    } catch (error) {
-        console.error('Error storing contact submission:', error);
-        res.status(500).json({ message: 'Failed to store contact submission' });
-    }
-});
-
-// Admin Routes
-app.get('/api/admin/total-visitors', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT COUNT(*) AS count FROM visitors');
-        res.json({ count: parseInt(result.rows[0].count) });
-    } catch (error) {
-        console.error('Error fetching total visitors:', error);
-        res.status(500).json({ error: 'Server error' });
-    }
-});
-
-app.get('/api/admin/total-page-views', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT COUNT(*) AS count FROM page_views');
-        res.json({ count: parseInt(result.rows[0].count) });
-    } catch (error) {
-        console.error('Error fetching total page views:', error);
-        res.status(500).json({ error: 'Server error' });
-    }
-});
-
-app.get('/api/admin/mobile-users', async (req, res) => {
-    try {
-        const result = await pool.query(`
-            SELECT
-                (SELECT COUNT(*) FROM visitors WHERE device = 'Mobile') * 100.0 / NULLIF((SELECT COUNT(*) FROM visitors), 0) AS percentage
-        `);
-        res.json({ percentage: parseFloat(result.rows[0].percentage) || 0 });
-    } catch (error) {
-        console.error('Error fetching mobile users:', error);
-        res.status(500).json({ error: 'Server error' });
-    }
-});
-
-app.get('/api/admin/pc-users', async (req, res) => {
-    try {
-        const result = await pool.query(`
-            SELECT
-                (SELECT COUNT(*) FROM visitors WHERE device = 'Desktop') * 100.0 / NULLIF((SELECT COUNT(*) FROM visitors), 0) AS percentage
-        `);
-        res.json({ percentage: parseFloat(result.rows[0].percentage) || 0 });
-    } catch (error) {
-        console.error('Error fetching PC users:', error);
-        res.status(500).json({ error: 'Server error' });
-    }
-});
-
-app.get('/api/admin/recent-visitors', async (req, res) => {
-    try {
-        const result = await pool.query(`
-            SELECT id, timestamp, visits, browser, device, screen_size
-            FROM visitors
-            ORDER BY timestamp DESC
-            LIMIT 50
-        `);
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Error fetching recent visitors:', error);
-        res.status(500).json({ error: 'Server error' });
-    }
-});
-
-app.get('/api/admin/browser-stats', async (req, res) => {
-    try {
-        const result = await pool.query(`
-            SELECT browser, COUNT(*) AS count
-            FROM visitors
-            GROUP BY browser
-            ORDER BY count DESC
-        `);
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Error fetching browser stats:', error);
-        res.status(500).json({ error: 'Server error' });
-    }
-});
-
-app.get('/api/admin/page-stats', async (req, res) => {
-    try {
-        const result = await pool.query(`
-            SELECT page, COUNT(*) AS count
-            FROM page_views
-            GROUP BY page
-            ORDER BY count DESC
-        `);
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Error fetching page stats:', error);
-        res.status(500).json({ error: 'Server error' });
-    }
-});
-
-app.get('/api/admin/device-stats', async (req, res) => {
-    try {
-        const result = await pool.query(`
-            SELECT device, COUNT(*) AS count
-            FROM visitors
-            GROUP BY device
-            ORDER BY count DESC
-        `);
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Error fetching device stats:', error);
-        res.status(500).json({ error: 'Server error' });
-    }
-});
-
-app.get('/api/admin/session-buckets', async (req, res) => {
-    try {
-        const result = await pool.query(`
-            SELECT
-                CASE
-                    WHEN duration < 60 THEN '< 1 min'
-                    WHEN duration < 180 THEN '1-3 min'
-                    WHEN duration < 300 THEN '3-5 min'
-                    WHEN duration < 600 THEN '5-10 min'
-                    ELSE '> 10 min'
-                END AS bucket,
-                COUNT(*) AS count
-            FROM session_durations
-            GROUP BY bucket
-            ORDER BY
-                CASE bucket
-                    WHEN '< 1 min' THEN 1
-                    WHEN '1-3 min' THEN 2
-                    WHEN '3-5 min' THEN 3
-                    WHEN '5-10 min' THEN 4
-                    ELSE 5
-                END
-        `);
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Error fetching session buckets:', error);
-        res.status(500).json({ error: 'Server error' });
-    }
-});
-
-app.get('/api/admin/contact-logs', async (req, res) => {
-    try {
-        const result = await pool.query(`
-            SELECT id, name, email, subject, message, timestamp
-            FROM contact_submissions
-            ORDER BY timestamp DESC
-        `);
-        res.json(result.rows.map(row => ({
-            id: row.id,
-            name: row.name,
-            email: row.email,
-            subject: row.subject,
-            message: row.message,
-            timestamp: parseInt(row.timestamp)
-        })));
-    } catch (error) {
-        console.error('Error fetching contact logs:', error);
-        res.status(500).json({ error: 'Server error' });
-    }
-});
-
-app.post('/api/admin/cleanup', async (req, res) => {
-    try {
-        await pool.query(`
-            DELETE FROM session_durations
-            WHERE timestamp < EXTRACT(EPOCH FROM NOW() - INTERVAL '30 days') * 1000
-        `);
-        await pool.query(`
-            DELETE FROM page_views
-            WHERE timestamp < EXTRACT(EPOCH FROM NOW() - INTERVAL '30 days') * 1000
-        `);
-        await pool.query(`
-            DELETE FROM visitors
-            WHERE timestamp < EXTRACT(EPOCH FROM NOW() - INTERVAL '30 days') * 1000
-        `);
-        await pool.query(`
-            DELETE FROM contact_submissions
-            WHERE timestamp < EXTRACT(EPOCH FROM NOW() - INTERVAL '30 days') * 1000
-        `);
-        res.json({ success: true });
-    } catch (error) {
-        console.error('Error cleaning up old data:', error);
-        res.status(500).json({ error: 'Server error' });
-    }
-});
-
-initializeDatabase().then(() => {
-    app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
+document.addEventListener('DOMContentLoaded', function() {
+    'use strict';
+    
+    // DOM elements
+    const totalVisitorsElement = document.getElementById('total-visitors');
+    const totalPageViewsElement = document.getElementById('total-page-views');
+    const mobileUsersElement = document.getElementById('mobile-users');
+    const pcUsersElement = document.getElementById('pc-users');
+    const visitorsTableBody = document.getElementById('visitors-table-body');
+    const contactLogsTableBody = document.getElementById('contact-logs-table-body');
+    const browserStatsElement = document.getElementById('browser-stats');
+    const pageStatsElement = document.getElementById('page-stats');
+    const navItems = document.querySelectorAll('.admin-nav li');
+    const adminPanels = document.querySelectorAll('.admin-panel');
+    const sidebarToggle = document.querySelector('.sidebar-toggle');
+    const sidebar = document.querySelector('.admin-sidebar');
+    
+    // API endpoint
+    const API_BASE_URL = '/api';
+    
+    // Initialize dashboard
+    updateStats();
+    
+    // Set up auto-refresh every 30 seconds
+    setInterval(updateStats, 30000);
+    
+    // Set up navigation
+    navItems.forEach(item => {
+        item.addEventListener('click', function() {
+            navItems.forEach(navItem => navItem.classList.remove('active'));
+            this.classList.add('active');
+            const targetId = this.querySelector('a').getAttribute('href').substring(1);
+            adminPanels.forEach(panel => {
+                panel.classList.remove('active');
+                if (panel.id === targetId) {
+                    panel.classList.add('active');
+                }
+            });
+        });
     });
-}).catch(err => {
-    console.error('Failed to initialize database:', err);
-    process.exit(1);
+    
+    // Mobile sidebar toggle
+    if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('active');
+        });
+    }
+    
+    /**
+     * Update all statistics on the dashboard
+     */
+    function updateStats() {
+        // Show loading state
+        if (totalVisitorsElement) totalVisitorsElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        if (totalPageViewsElement) totalPageViewsElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        if (mobileUsersElement) mobileUsersElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        if (pcUsersElement) pcUsersElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        if (visitorsTableBody) visitorsTableBody.innerHTML = '<tr><td colspan="6"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
+        if (contactLogsTableBody) contactLogsTableBody.innerHTML = '<tr><td colspan="6"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
+        if (browserStatsElement) browserStatsElement.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Loading...</p>';
+        if (pageStatsElement) pageStatsElement.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Loading...</p>';
+
+        // Fetch all stats concurrently with individual error handling
+        const endpoints = [
+            { url: `${API_BASE_URL}/admin/total-visitors`, key: 'totalVisitors', default: { count: 0 } },
+            { url: `${API_BASE_URL}/admin/total-page-views`, key: 'totalPageViews', default: { count: 0 } },
+            { url: `${API_BASE_URL}/admin/mobile-users`, key: 'mobileUsers', default: { percentage: 0 } },
+            { url: `${API_BASE_URL}/admin/pc-users`, key: 'pcUsers', default: { percentage: 0 } },
+            { url: `${API_BASE_URL}/admin/recent-visitors`, key: 'recentVisitors', default: [] },
+            { url: `${API_BASE_URL}/admin/browser-stats`, key: 'browserStats', default: [] },
+            { url: `${API_BASE_URL}/admin/page-stats`, key: 'pageStats', default: [] },
+            { url: `${API_BASE_URL}/admin/device-stats`, key: 'deviceStats', default: [] },
+            { url: `${API_BASE_URL}/admin/session-buckets`, key: 'sessionBuckets', default: [] },
+            { url: `${API_BASE_URL}/admin/contact-logs`, key: 'contactLogs', default: [] }
+        ];
+
+        const results = {};
+        const fetchPromises = endpoints.map(async ({ url, key, default: defaultValue }) => {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`);
+                const data = await response.json();
+                results[key] = data || defaultValue;
+            } catch (error) {
+                console.error(`Error fetching ${url}:`, error);
+                results[key] = defaultValue;
+            }
+        });
+
+        await Promise.all(fetchPromises);
+
+        // Fallback to localStorage if all API calls fail
+        if (Object.values(results).every(result => result === null || (Array.isArray(result) && result.length === 0))) {
+            console.warn('All API calls failed, falling back to localStorage');
+            const visitors = JSON.parse(localStorage.getItem('portfolio_visitors')) || [];
+            const pageViews = JSON.parse(localStorage.getItem('portfolio_pageviews')) || [];
+            const sessionDurations = JSON.parse(localStorage.getItem('portfolio_sessionDurations')) || [];
+            const contactLogs = JSON.parse(localStorage.getItem('portfolio_contact_logs')) || [];
+            results.totalVisitors = { count: visitors.length };
+            results.totalPageViews = { count: pageViews.length };
+            results.mobileUsers = { percentage: visitors.length > 0 ? Math.round((visitors.filter(v => v.device === 'Mobile').length / visitors.length) * 100) : 0 };
+            results.pcUsers = { percentage: visitors.length > 0 ? Math.round((visitors.filter(v => v.device === 'Desktop').length / visitors.length) * 100) : 0 };
+            results.recentVisitors = visitors;
+            results.browserStats = computeBrowserStats(visitors);
+            results.pageStats = computePageStats(pageViews);
+            results.deviceStats = computeDeviceStats(visitors);
+            results.sessionBuckets = computeSessionBuckets(sessionDurations);
+            results.contactLogs = contactLogs;
+        }
+
+        // Update UI with the data
+        updateDashboardWithData(
+            results.totalVisitors.count || 0,
+            results.totalPageViews.count || 0,
+            results.mobileUsers.percentage || 0,
+            results.pcUsers.percentage || 0,
+            results.recentVisitors || [],
+            results.browserStats || [],
+            results.pageStats || [],
+            results.deviceStats || [],
+            results.sessionBuckets || [],
+            results.contactLogs || []
+        );
+    }
+    
+    /**
+     * Update dashboard with the provided data
+     */
+    function updateDashboardWithData(totalVisitors, totalPageViews, mobilePercentage, pcPercentage, visitors, browserStats, pageStats, deviceStats, sessionBuckets, contactLogs) {
+        // Update summary stats with pulse animation
+        if (totalVisitorsElement) {
+            totalVisitorsElement.textContent = totalVisitors;
+            totalVisitorsElement.closest('.stats-card').classList.add('pulse');
+            setTimeout(() => totalVisitorsElement.closest('.stats-card').classList.remove('pulse'), 1000);
+        }
+        
+        if (totalPageViewsElement) {
+            totalPageViewsElement.textContent = totalPageViews;
+            totalPageViewsElement.closest('.stats-card').classList.add('pulse');
+            setTimeout(() => totalPageViewsElement.closest('.stats-card').classList.remove('pulse'), 1000);
+        }
+        
+        if (mobileUsersElement) {
+            mobileUsersElement.textContent = `${mobilePercentage}%`;
+            mobileUsersElement.closest('.stats-card').classList.add('pulse');
+            setTimeout(() => mobileUsersElement.closest('.stats-card').classList.remove('pulse'), 1000);
+        }
+        
+        if (pcUsersElement) {
+            pcUsersElement.textContent = `${pcPercentage}%`;
+            pcUsersElement.closest('.stats-card').classList.add('pulse');
+            setTimeout(() => pcUsersElement.closest('.stats-card').classList.remove('pulse'), 1000);
+        }
+
+        // Populate tables
+        populateVisitorsTable(visitors);
+        populateContactLogsTable(contactLogs);
+        
+        // Update browser and page stats
+        updateBrowserStats(browserStats);
+        updatePageStats(pageStats);
+        
+        // Initialize charts
+        initCharts(deviceStats, sessionBuckets);
+    }
+    
+    /**
+     * Format a date object to a readable string
+     */
+    function formatDate(date) {
+        const options = { 
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        };
+        return date.toLocaleDateString('en-US', options);
+    }
+    
+    /**
+     * Initialize all charts
+     */
+    function initCharts(deviceStats, sessionBuckets) {
+        initDeviceChart(deviceStats);
+        initSessionChart(sessionBuckets);
+    }
+    
+    /**
+     * Initialize device distribution chart
+     */
+    function initDeviceChart(deviceStats) {
+        const deviceChartCanvas = document.getElementById('device-chart');
+        if (deviceChartCanvas) {
+            const ctx = deviceChartCanvas.getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: deviceStats.map(stat => stat.device),
+                    datasets: [{
+                        data: deviceStats.map(stat => stat.count),
+                        backgroundColor: ['#9D4EDD', '#C4A1FF', '#5A189A'],
+                        borderColor: '#121212',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#CCCCCC', padding: 15 }
+                        }
+                    }
+                }
+            });
+        }
+    }
+    
+    /**
+     * Initialize session duration chart
+     */
+    function initSessionChart(sessionBuckets) {
+        const sessionChartCanvas = document.getElementById('session-chart');
+        if (sessionChartCanvas) {
+            const ctx = sessionChartCanvas.getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sessionBuckets.map(stat => stat.bucket),
+                    datasets: [{
+                        label: 'Number of Sessions',
+                        data: sessionBuckets.map(stat => stat.count),
+                        backgroundColor: '#9D4EDD',
+                        borderColor: '#5A189A',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { color: '#CCCCCC' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+                        x: { ticks: { color: '#CCCCCC' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } }
+                    },
+                    plugins: { legend: { labels: { color: '#CCCCCC' } } }
+                }
+            });
+        }
+    }
+    
+    /**
+     * Populate the visitors table with data
+     */
+    function populateVisitorsTable(visitors) {
+        visitorsTableBody.innerHTML = '';
+        
+        const sortedVisitors = [...visitors].sort((a, b) => b.timestamp - a.timestamp);
+        
+        sortedVisitors.forEach(visitor => {
+            const row = document.createElement('tr');
+            
+            const idCell = document.createElement('td');
+            idCell.textContent = visitor.id.substring(0, 8) + '...';
+            
+            const dateCell = document.createElement('td');
+            dateCell.textContent = formatDate(new Date(visitor.timestamp));
+            
+            const visitsCell = document.createElement('td');
+            visitsCell.textContent = visitor.visits;
+            
+            const browserCell = document.createElement('td');
+            browserCell.textContent = visitor.browser || 'Unknown';
+            
+            const deviceCell = document.createElement('td');
+            deviceCell.textContent = visitor.device || 'Unknown';
+            
+            const screenCell = document.createElement('td');
+            screenCell.textContent = visitor.screenSize || 'Unknown';
+            
+            row.appendChild(idCell);
+            row.appendChild(dateCell);
+            row.appendChild(visitsCell);
+            row.appendChild(browserCell);
+            row.appendChild(deviceCell);
+            row.appendChild(screenCell);
+            
+            visitorsTableBody.appendChild(row);
+        });
+    }
+    
+    /**
+     * Populate the contact logs table with data
+     */
+    function populateContactLogsTable(contactLogs) {
+        contactLogsTableBody.innerHTML = '';
+        
+        const sortedLogs = [...contactLogs].sort((a, b) => b.timestamp - a.timestamp);
+        
+        if (sortedLogs.length === 0) {
+            const row = document.createElement('tr');
+            const cell = document.createElement('td');
+            cell.colSpan = 6;
+            cell.textContent = 'No contact submissions available';
+            cell.style.textAlign = 'center';
+            row.appendChild(cell);
+            contactLogsTableBody.appendChild(row);
+            return;
+        }
+        
+        sortedLogs.forEach(log => {
+            const row = document.createElement('tr');
+            
+            const idCell = document.createElement('td');
+            idCell.textContent = log.id.substring(0, 8) + '...';
+            
+            const nameCell = document.createElement('td');
+            nameCell.textContent = log.name;
+            
+            const emailCell = document.createElement('td');
+            emailCell.textContent = log.email;
+            
+            const subjectCell = document.createElement('td');
+            subjectCell.textContent = log.subject;
+            
+            const messageCell = document.createElement('td');
+            messageCell.textContent = log.message.length > 50 ? log.message.substring(0, 50) + '...' : log.message;
+            messageCell.title = log.message; // Full message on hover
+            
+            const dateCell = document.createElement('td');
+            dateCell.textContent = formatDate(new Date(log.timestamp));
+            
+            row.appendChild(idCell);
+            row.appendChild(nameCell);
+            row.appendChild(emailCell);
+            row.appendChild(subjectCell);
+            row.appendChild(messageCell);
+            row.appendChild(dateCell);
+            
+            contactLogsTableBody.appendChild(row);
+        });
+    }
+    
+    /**
+     * Update browser distribution stats
+     */
+    function updateBrowserStats(browserStats) {
+        browserStatsElement.innerHTML = '';
+        const total = browserStats.reduce((sum, stat) => sum + stat.count, 0);
+        browserStats.forEach(stat => {
+            const percentage = total > 0 ? Math.round((stat.count / total) * 100) : 0;
+            const statItem = document.createElement('div');
+            statItem.className = 'stat-item';
+            let iconClass = 'fas fa-globe';
+            if (stat.browser === 'Chrome') iconClass = 'fab fa-chrome';
+            else if (stat.browser === 'Firefox') iconClass = 'fab fa-firefox';
+            else if (stat.browser === 'Safari') iconClass = 'fab fa-safari';
+            else if (stat.browser === 'Edge') iconClass = 'fab fa-edge';
+            else if (stat.browser === 'Opera') iconClass = 'fab fa-opera';
+            else if (stat.browser === 'Internet Explorer') iconClass = 'fab fa-internet-explorer';
+            statItem.innerHTML = `
+                <div class="stat-name"><i class="${iconClass}"></i> ${stat.browser}</div>
+                <div class="stat-value">${percentage}%</div>
+                <div class="progress-container"><div class="progress-bar" style="width: ${percentage}%"></div></div>
+            `;
+            browserStatsElement.appendChild(statItem);
+        });
+    }
+    
+    /**
+     * Update page popularity stats
+     */
+    function updatePageStats(pageStats) {
+        pageStatsElement.innerHTML = '';
+        const total = pageStats.reduce((sum, stat) => sum + stat.count, 0);
+        pageStats.forEach(stat => {
+            const percentage = total > 0 ? Math.round((stat.count / total) * 100) : 0;
+            const statItem = document.createElement('div');
+            statItem.className = 'stat-item';
+            let pageName = stat.page === '/' ? 'Home' : stat.page.split('/').pop().split('.')[0];
+            pageName = pageName.charAt(0).toUpperCase() + pageName.slice(1);
+            statItem.innerHTML = `
+                <div class="stat-name"><i class="fas fa-file"></i> ${pageName}</div>
+                <div class="stat-value">${stat.count} views</div>
+                <div class="progress-container"><div class="progress-bar" style="width: ${percentage}%"></div></div>
+            `;
+            pageStatsElement.appendChild(statItem);
+        });
+    }
+    
+    /**
+     * Helper functions for localStorage fallback
+     */
+    function computeBrowserStats(visitors) {
+        const browserCounts = {};
+        visitors.forEach(visitor => {
+            const browser = visitor.browser || 'Unknown';
+            browserCounts[browser] = (browserCounts[browser] || 0) + 1;
+        });
+        return Object.entries(browserCounts).map(([browser, count]) => ({ browser, count }));
+    }
+
+    function computePageStats(pageViews) {
+        const pageCounts = {};
+        pageViews.forEach(view => {
+            const page = view.page || '/';
+            pageCounts[page] = (pageCounts[page] || 0) + 1;
+        });
+        return Object.entries(pageCounts).map(([page, count]) => ({ page, count }));
+    }
+
+    function computeDeviceStats(visitors) {
+        const deviceCounts = {};
+        visitors.forEach(visitor => {
+            const device = visitor.device || 'Unknown';
+            deviceCounts[device] = (deviceCounts[device] || 0) + 1;
+        });
+        return Object.entries(deviceCounts).map(([device, count]) => ({ device, count }));
+    }
+
+    function computeSessionBuckets(sessionDurations) {
+        const buckets = {
+            '< 1 min': 0,
+            '1-3 min': 0,
+            '3-5 min': 0,
+            '5-10 min': 0,
+            '> 10 min': 0
+        };
+        sessionDurations.forEach(duration => {
+            if (duration.duration < 60) buckets['< 1 min']++;
+            else if (duration.duration < 180) buckets['1-3 min']++;
+            else if (duration.duration < 300) buckets['3-5 min']++;
+            else if (duration.duration < 600) buckets['5-10 min']++;
+            else buckets['> 10 min']++;
+        });
+        return Object.entries(buckets).map(([bucket, count]) => ({ bucket, count }));
+    }
+
+    /**
+     * Clean up old data
+     */
+    window.cleanupOldData = function() {
+        fetch(`${API_BASE_URL}/admin/cleanup`, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Old data cleaned up successfully');
+                    updateStats();
+                } else {
+                    alert('Failed to clean up data');
+                }
+            })
+            .catch(error => {
+                console.error('Error cleaning up data:', error);
+                alert('Error cleaning up data');
+            });
+    };
 });
+</xaiArtifact>
