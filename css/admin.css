@@ -1,6 +1,4 @@
-/*---------------------------------------------
- * Admin Dashboard Styles
- *--------------------------------------------*/
+/* Admin Dashboard Styles */
 :root {
     --bg-color: #121212;
     --bg-color-lighter: #1a1a1a;
@@ -15,12 +13,13 @@
 
 body {
     font-family: "Poppins", sans-serif;
-    background: var(--dark-bg);
-    color: var(--light-text);
+    background: var(--bg-color);
+    color: var(--text-color);
 }
+
 html {
     scroll-behavior: smooth;
-    font-size: 62.5%; /* Base font-size: 10px for easier rem calculations */
+    font-size: 62.5%;
 }
 
 .admin-container {
@@ -28,7 +27,6 @@ html {
     flex-direction: column;
     min-height: 100vh;
     background-color: var(--bg-color);
-    font-family: 'Arial', sans-serif;
 }
 
 /* Header */
@@ -42,7 +40,7 @@ html {
     align-items: center;
     box-shadow: 0 0.4rem 1.6rem rgba(0, 0, 0, 0.1);
     border-bottom: 1px solid var(--bg-color-lighter);
-     position: fixed;
+    position: fixed;
     margin-top: -80px;
     margin-left: -25px;
     width: 100%;
@@ -52,7 +50,7 @@ html {
 .admin-logo a {
     display: flex;
     align-items: center;
-    font-size: 1.8rem; /* Reduced from 2.2rem */
+    font-size: 1.8rem;
     font-weight: 700;
     color: var(--text-color);
     text-decoration: none;
@@ -78,7 +76,7 @@ html {
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    font-size: 1.3rem; /* Reduced from 1.5rem */
+    font-size: 1.3rem;
     text-decoration: none;
     transition: var(--transition-medium);
     margin-right: 50px;
@@ -94,7 +92,7 @@ html {
 /* Sidebar Toggle (Mobile) */
 .sidebar-toggle {
     display: none;
-    font-size: 1.6rem; /* Reduced from 1.8rem */
+    font-size: 1.6rem;
     background: none;
     border: none;
     color: var(--text-color);
@@ -142,17 +140,17 @@ html {
     justify-content: center;
     align-items: center;
     color: white;
-    font-size: 1.6rem; /* Reduced from 2rem */
+    font-size: 1.6rem;
 }
 
 .admin-info h3 {
-    font-size: 1.5rem; /* Reduced from 1.8rem */
+    font-size: 1.5rem;
     margin-bottom: 0.4rem;
     color: var(--text-color);
 }
 
 .admin-info p {
-    font-size: 1.2rem; /* Reduced from 1.4rem */
+    font-size: 1.2rem;
     color: var(--text-color-light);
 }
 
@@ -171,7 +169,7 @@ html {
     gap: 1.2rem;
     padding: 1rem 1.6rem;
     color: var(--text-color);
-    font-size: 1.4rem; /* Reduced from 1.6rem */
+    font-size: 1.4rem;
     text-decoration: none;
     transition: var(--transition-medium);
     position: relative;
@@ -227,7 +225,7 @@ html {
     border: none;
     border-radius: 0.4rem;
     cursor: pointer;
-    font-size: 1.3rem; /* Reduced from 1.5rem */
+    font-size: 1.3rem;
     transition: var(--transition-medium);
 }
 
@@ -242,7 +240,7 @@ html {
     grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
     gap: 2rem;
     margin-bottom: 3.2rem;
-    width: 800px; /* Removed fixed 700px */
+    width: 800px;
 }
 
 .stats-card {
@@ -273,19 +271,19 @@ html {
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 2rem; /* Reduced from 2.4rem */
+    font-size: 2rem;
     color: white;
     flex-shrink: 0;
 }
 
 .stats-info h3 {
-    font-size: 1.4rem; /* Reduced from 1.6rem */
+    font-size: 1.4rem;
     margin-bottom: 0.6rem;
     color: var(--text-color-light);
 }
 
 .stats-info p {
-    font-size: 2.2rem; /* Reduced from 2.8rem */
+    font-size: 2.2rem;
     font-weight: 700;
     color: var(--primary-color);
     line-height: 1.2;
@@ -308,14 +306,14 @@ html {
 }
 
 .chart-box h3 {
-    font-size: 1.6rem; /* Reduced from 1.8rem */
+    font-size: 1.6rem;
     margin-bottom: 1.6rem;
     color: var(--text-color);
 }
 
 canvas {
     max-width: 100%;
-    height: 24rem !important; /* Reduced from 300px */
+    height: 24rem !important;
 }
 
 /* Visitors Table */
@@ -328,45 +326,105 @@ canvas {
     width: 800px;
 }
 
-.visitors-table, .contact-logs-table {
+.visitors-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 1.3rem; /* Reduced from 1.5rem */
+    font-size: 1.3rem;
     table-layout: auto;
 }
 
-.visitors-table th, .contact-logs-table th {
+.visitors-table th {
     background-color: rgba(255, 255, 255, 0.05);
     padding: 1.2rem;
     text-align: left;
-    font-size: 1.4rem; /* Reduced from 1.6rem */
+    font-size: 1.4rem;
     color: var(--primary-color);
     font-weight: 600;
 }
 
-.visitors-table td, .contact-logs-table td {
+.visitors-table td {
     padding: 1.2rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     color: var(--text-color);
 }
 
-.visitors-table tbody tr:hover, .contact-logs-table tbody tr:hover {
+.visitors-table tbody tr:hover {
     background-color: rgba(255, 255, 255, 0.03);
 }
 
-.visitors-table tbody tr:last-child td, .contact-logs-table tbody tr:last-child td {
+.visitors-table tbody tr:last-child td {
     border-bottom: none;
 }
 
-/* Contact Logs Table */
-.contact-logs-table td:nth-child(4), /* Subject */
-.contact-logs-table td:nth-child(5) { /* Message */
-    max-width: 16rem; /* Reduced from 200px */
-    overflow-wrap: break-word;
-    white-space: normal;
-    height: auto;
+/* Contact Logs Cards */
+.contact-card {
+    background-color: var(--bg-color-lighter);
+    border-radius: var(--border-radius-md);
+    padding: 2rem;
+    box-shadow: 0 0.8rem 1.6rem rgba(0, 0, 0, 0.1);
+    text-align: center;
+    transition: var(--transition-medium);
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.contact-card:hover {
+    transform: translateY(-0.4rem);
+    box-shadow: 0 1.2rem 2.4rem rgba(0, 0, 0, 0.15);
+}
+
+.contact-icon {
+    font-size: 3rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.contact-card h4 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+}
+
+.contact-card p {
+    font-size: 1rem;
+    color: var(--text-color-light);
+    margin-bottom: 0.5rem;
+}
+
+.contact-card .message {
+    overflow: hidden;
     text-overflow: ellipsis;
-    padding: 1.2rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    max-height: 80px;
+    max-width: 300px;
+}
+
+.contact-card .message:hover {
+    cursor: pointer;
+    color: var(--primary-color);
+}
+
+.delete-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 0.4rem;
+    padding: 0.6rem 1.2rem;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: var(--transition-medium);
+    margin-top: 1rem;
+}
+
+.delete-btn:hover {
+    background-color: #c82333;
+    transform: translateY(-0.2rem);
 }
 
 /* Stats Panels */
@@ -380,14 +438,14 @@ canvas {
 }
 
 .stats-overview h3 {
-    font-size: 1.6rem; /* Reduced from 1.8rem */
+    font-size: 1.6rem;
     margin-bottom: 1.6rem;
     color: var(--text-color);
 }
 
 .stat-chart-container {
     width: 100%;
-    height: 28rem; /* Reduced from 350px */
+    height: 28rem;
 }
 
 .stats-details {
@@ -405,7 +463,7 @@ canvas {
 }
 
 .detail-card h3 {
-    font-size: 1.6rem; /* Reduced from 1.8rem */
+    font-size: 1.6rem;
     margin-bottom: 1.6rem;
     color: var(--text-color);
 }
@@ -429,7 +487,7 @@ canvas {
 }
 
 .stat-name {
-    font-size: 1.3rem; /* Reduced from 1.5rem */
+    font-size: 1.3rem;
     display: flex;
     align-items: center;
     gap: 0.8rem;
@@ -443,7 +501,7 @@ canvas {
 }
 
 .stat-value {
-    font-size: 1.4rem; /* Reduced from 1.6rem */
+    font-size: 1.4rem;
     font-weight: 600;
     color: var(--primary-color);
 }
@@ -473,7 +531,7 @@ canvas {
 }
 
 .admin-footer p {
-    font-size: 1.2rem; /* Reduced from 1.4rem */
+    font-size: 1.2rem;
     color: var(--text-color-light);
 }
 
@@ -540,7 +598,7 @@ canvas {
     }
 
     .stats-info p {
-        font-size: 2rem; /* Reduced from 2.4rem */
+        font-size: 2rem;
     }
 }
 
@@ -560,7 +618,7 @@ canvas {
     }
 
     .stats-info p {
-        font-size: 1.8rem; /* Reduced from 2.2rem */
+        font-size: 1.8rem;
     }
 
     .chart-box, .stat-chart-container {
@@ -572,7 +630,7 @@ canvas {
         scroll-margin-top: 8rem;
     }
 
-    canvas {
-        height: 20rem !important; /* Reduced from 250px */
+    .canvas {
+        height: 20rem !important;
     }
 }
