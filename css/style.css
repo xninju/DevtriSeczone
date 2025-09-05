@@ -1346,6 +1346,12 @@ img[loading="lazy"].loaded {
   color: var(--light-text);
 }
 
+.form-message {
+    margin-top: 10px;
+    font-size: 1.4rem;
+    text-align: center;
+}
+
 .submit-btn {
     width: 100%;
   padding: 10px;
