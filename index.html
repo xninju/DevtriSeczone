@@ -89,10 +89,6 @@
     </div>
 </section>
 
-<!-- Contact Toggle -->
-<div id="contact-button"><i class="fas fa-phone"></i> Contact Us</div>
-<div class="overlay" id="overlay"></div>
-
 <!-- Statistics Section -->
 <section id="statistics" class="statistics">
     <div class="container">
@@ -315,37 +311,66 @@
     </div>
 </section>
 
+<!-- Contact Toggle -->
+<div id="contact-button"><i class="fas fa-phone"></i> Contact Us</div>
+<div class="overlay" id="overlay"></div>
+
+<!-- Contact Form -->
+<div class="contact-form-wrapper">
+    <form id="contact-form" class="contact-form">
+        <div class="form-group">
+            <input type="text" id="name" name="name" placeholder="Your Name" required>
+            <span class="form-icon"><i class="fas fa-user"></i></span>
+        </div>
+        <div class="form-group">
+            <input type="email" id="email" name="email" placeholder="Your Email" required>
+            <span class="form-icon"><i class="fas fa-envelope"></i></span>
+        </div>
+        <div class="form-group">
+            <input type="text" id="subject" name="subject" placeholder="Subject" required>
+            <span class="form-icon"><i class="fas fa-pencil-alt"></i></span>
+        </div>
+        <div class="form-group">
+            <textarea id="message" name="message" placeholder="Your Message" required></textarea>
+            <span class="form-icon"><i class="fas fa-comment-alt"></i></span>
+        </div>
+        <div id="form-message" class="form-message"></div>
+        <button type="submit" class="submit-btn">
+            <span>Send Message</span>
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </form>
+</div>
+
 <!-- Contact Section -->
 <section id="contact" class="contact py-5">
     <div class="container">
         <h2 class="text-center mb-5">Contact Us</h2>
         <div class="row">
             <div class="col-md-6">
-                <div class="contact-form-wrapper reveal-text delay-400">
-                        <form id="contact-form" class="contact-form">
-                            <div class="form-group">
-                                <input type="text" id="name" name="name" placeholder="Your Name" required>
-                                <span class="form-icon"><i class="fas fa-user"></i></span>
-                            </div>
-                            <div class="form-group">
-                                <input type="email" id="email" name="email" placeholder="Your Email" required>
-                                <span class="form-icon"><i class="fas fa-envelope"></i></span>
-                            </div>
-                            <div class="form-group">
-                                <input type="text" id="subject" name="subject" placeholder="Subject" required>
-                                <span class="form-icon"><i class="fas fa-pencil-alt"></i></span>
-                            </div>
-                            <div class="form-group">
-                                <textarea id="message" name="message" placeholder="Your Message" required></textarea>
-                                <span class="form-icon"><i class="fas fa-comment-alt"></i></span>
-                            </div>
-                            <div id="form-message" class="form-message"></div>
-                            <button type="submit" class="submit-btn">
-                                <span>Send Message</span>
-                                <i class="fas fa-paper-plane"></i>
-                            </button>
-                        </form>
+                <form id="contact-form-main" method="POST">
+                    <div class="form-group">
+                        <input type="text" id="name-main" name="name" placeholder="Your Name" required>
+                        <span class="form-icon"><i class="fas fa-user"></i></span>
                     </div>
+                    <div class="form-group">
+                        <input type="email" id="email-main" name="email" placeholder="Your Email" required>
+                        <span class="form-icon"><i class="fas fa-envelope"></i></span>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="subject-main" name="subject" placeholder="Subject" required>
+                        <span class="form-icon"><i class="fas fa-pencil-alt"></i></span>
+                    </div>
+                    <div class="form-group">
+                        <textarea id="message-main" name="message" placeholder="Your Message" required></textarea>
+                        <span class="form-icon"><i class="fas fa-comment-alt"></i></span>
+                    </div>
+                    <div id="form-message-main" class="form-message"></div>
+                    <button type="submit" class="submit-btn">
+                        <span>Send Message</span>
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
             </div>
             <div class="col-md-6">
                 <div class="contact-info">
