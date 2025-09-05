@@ -89,6 +89,33 @@
     </div>
 </section>
 
+    <!-- Contact Toggle -->
+<div id="contact-button"><i class="fas fa-phone"></i> Contact Us</div>
+<div class="overlay" id="overlay"></div>
+
+<!-- Contact Form -->
+<div id="contact-form">
+    <form
+      action="https://formspree.io/f/mrbppzan"
+      method="POST"
+    >
+        <label>
+            Your Name:
+            <input type="Name" name="Name">
+          </label>
+      <label>
+        Your email:
+        <input type="email" name="email">
+      </label>
+      <label>
+        Your message:
+        <textarea name="message"></textarea>
+      </label>
+      <!-- your other form fields go here -->
+      <button type="submit">Send</button>
+    </form>
+</div>
+    
 <!-- Statistics Section -->
 <section id="statistics" class="statistics">
     <div class="container">
@@ -311,91 +338,42 @@
     </div>
 </section>
 
-<!-- Contact Toggle -->
-<div id="contact-button"><i class="fas fa-phone"></i> Contact Us</div>
-<div class="overlay" id="overlay"></div>
-
 <!-- Contact Section -->
-        <section id="contact" class="contact">
-            <div class="container">
-                <div class="section-title">
-                    <span class="sub-title reveal-text">Get In Touch</span>
-                    <h2 class="title reveal-text delay-200">Contact Me</h2>
-                </div>
-                <div class="contact-content">
-                    <div class="contact-info reveal-text delay-300">
-                        <div class="contact-card">
-                            <div class="contact-icon">
-                                <i class="fas fa-envelope"></i>
-                            </div>
-                            <div class="contact-details">
-                                <h3>Email</h3>
-                                <p>ashishkumarsinghhhh@gmail.com</p>
-                            </div>
-                        </div>
-                        <div class="contact-card">
-                            <div class="contact-icon">
-                                <i class="fas fa-phone-alt"></i>
-                            </div>
-                            <div class="contact-details">
-                                <h3>Phone</h3>
-                                <p>+91 77******22</p> 
-                                <span style="font-size: 0.8em; color: yellow;">(Sorry, I can't provide that due to privacy)</span>
-                            </div>
-                        </div>
-                        <div class="contact-card">
-                            <div class="contact-icon">
-                                <i class="fas fa-map-marker-alt"></i>
-                            </div>
-                            <div class="contact-details">
-                                <h3>Location</h3>
-                                <p>Delhi, India</p>
-                            </div>
-                        </div>
-                        <div class="social-links">
-                            <a href="https://github.com/pratik11500" target="_blank" class="social-link" aria-label="GitHub">
-                                <i class="fab fa-github"></i>
-                            </a>
-                            <a href="https://wa.me/917726066722" target="_blank" class="social-link" aria-label="Whatsapp">
-                                <i class="fab fa-whatsapp"></i>
-                            </a>
-                            <a href="https://t.me/whypratik" target="_blank" class="social-link" aria-label="Telegram">
-                                <i class="fab fa-telegram"></i>
-                            </a>
-                            <a href="https://discord.gg/BCEyMGKvxz" target="_blank" class="social-link" aria-label="Discord">
-                                <i class="fab fa-discord"></i>
-                            </a>
-                        </div>
+<section id="contact" class="contact py-5">
+    <div class="container">
+        <h2 class="text-center mb-5">Contact Us</h2>
+        <div class="row">
+            <div class="col-md-6">
+                <form
+                    id="contactForm"
+                  action="https://formspree.io/f/mrbppzan"
+                  method="POST">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
                     </div>
-                    <div class="contact-form-wrapper reveal-text delay-400">
-                        <form id="contact-form" class="contact-form">
-                            <div class="form-group">
-                                <input type="text" id="name" name="name" placeholder="Your Name" required>
-                                <span class="form-icon"><i class="fas fa-user"></i></span>
-                            </div>
-                            <div class="form-group">
-                                <input type="email" id="email" name="email" placeholder="Your Email" required>
-                                <span class="form-icon"><i class="fas fa-envelope"></i></span>
-                            </div>
-                            <div class="form-group">
-                                <input type="text" id="subject" name="subject" placeholder="Subject" required>
-                                <span class="form-icon"><i class="fas fa-pencil-alt"></i></span>
-                            </div>
-                            <div class="form-group">
-                                <textarea id="message" name="message" placeholder="Your Message" required></textarea>
-                                <span class="form-icon"><i class="fas fa-comment-alt"></i></span>
-                            </div>
-                            <div id="form-message" class="form-message"></div>
-                            <button type="submit" class="submit-btn">
-                                <span>Send Message</span>
-                                <i class="fas fa-paper-plane"></i>
-                            </button>
-                        </form>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
                     </div>
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Message</label>
+                        <textarea class="form-control" id="message" name="message" rows="5" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Send Message</button>
+                </form>
+            </div>
+            <div class="col-md-6">
+                <div class="contact-info">
+                    <h3>Get in Touch</h3>
+                    <p><i class="fas fa-map-marker-alt"></i>Shop/4, Panchdhapa Apt, Thankar Pada, Kalyan, Kalyan City, Thane, Kalyan, Maharashtra, India, 421301</p>
+                    <p><i class="fas fa-phone"></i> +91 78270 50067</p>
+                    <p><i class="fas fa-envelope"></i> info.ds@devtriseczone.com</p>
                 </div>
             </div>
-        </section>
-    </main>
+        </div>
+    </div>
+</section>
 
     <footer class="footer bg-dark text-light py-5">
     <div class="container">
