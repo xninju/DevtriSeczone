@@ -1350,20 +1350,17 @@ img[loading="lazy"].loaded {
 }
 
 .submit-btn {
-    padding: 12px 30px;
-    background-color: var(--primary-color);
-    color: white;
-    border-radius: var(--border-radius-sm);
-    font-weight: 600;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-    transition: var(--transition-medium);
-    cursor: pointer;
+    width: 100%;
+  padding: 10px;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s ease;
 }
 .submit-btn:hover {
-    background-color: var(--primary-dark);
+    background: var(--hover-color);
 }
 
 .submit-btn i {
