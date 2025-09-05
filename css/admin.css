@@ -6,9 +6,9 @@
     --bg-color-lighter: #1a1a1a;
     --text-color: #ffffff;
     --text-color-light: #cccccc;
-    --primary-color: #9D4EDD;
-    --primary-light: #C4A1FF;
-    --primary-dark: #5A189A;
+    --primary-color: #007bff;
+    --primary-light: #5098be;
+    --primary-dark: #0056b3;
     --border-radius-md: 10px;
     --transition-medium: all 0.3s ease;
 }
