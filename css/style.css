@@ -535,7 +535,7 @@ body {
   padding: 2rem;
   background: var(--card-bg);
   border-radius: 10px;
-  height: auto;
+  height: 100%;
   border: 1px solid rgba(0, 123, 255, 0.1);
 }
 
@@ -1314,8 +1314,6 @@ img[loading="lazy"].loaded {
 }
 
 #contact-form {
-  margin-top: 53%;
-  transform: translateY(-50%);
   width: auto;
   background: var(--card-bg);
   padding: 20px;
