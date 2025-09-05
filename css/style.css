@@ -1314,8 +1314,7 @@ img[loading="lazy"].loaded {
 }
 
 #contact-form {
-  position: relative;
-  top: 50%;
+  margin-top: 53%;
   transform: translateY(-50%);
   width: auto;
   background: var(--card-bg);
