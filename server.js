@@ -19,7 +19,7 @@ app.use('/api/', rateLimit({
 }));
 
 // Route to serve admin.html for /admin
-app.get('/admin', (_, res) => {
+app.get('/admin', (res, res) => {
     res.sendFile(path.join(__dirname, 'admin.html'));
 });
 
