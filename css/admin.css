@@ -81,6 +81,7 @@ html {
     font-size: 1.3rem; /* Reduced from 1.5rem */
     text-decoration: none;
     transition: var(--transition-medium);
+    margin-right: 50px;
 }
 
 .back-to-site:hover {
