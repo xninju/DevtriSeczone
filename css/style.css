@@ -1339,6 +1339,8 @@ img[loading="lazy"].loaded {
 
 #contact-form input,
 #contact-form textarea {
+  margin-left: 35px;
+  width: 92%;
   width: 100%;
   padding: 10px;
   margin-bottom: 15px;
@@ -1428,7 +1430,7 @@ img[loading="lazy"].loaded {
 .form-icon {
     position: absolute;
     top: 50%;
-    left: 15px;
+    left: -2px;
     transform: translateY(-50%);
     font-size: 1.6rem;
     color: var(--primary-color);
