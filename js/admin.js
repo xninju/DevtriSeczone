@@ -38,7 +38,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const navItems = document.querySelectorAll('.admin-nav li');
     const adminPanels = document.querySelectorAll('.admin-panel');
     navItems.forEach(item => {
-        item.addEventListener('click', function() {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
             navItems.forEach(navItem => navItem.classList.remove('active'));
             this.classList.add('active');
             const targetId = this.querySelector('a').getAttribute('href').substring(1);
@@ -61,7 +62,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /**
-     * Update all statistics on the dashboard
+     * Update all statistics
      */
     async function updateStats() {
         // Show loading state
@@ -106,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         await Promise.all(fetchPromises);
 
-        // Fallback to localStorage if contact-logs API fails
+        // Fallback to localStorage for contact logs
         if (results.contactLogs.length === 0) {
             const contactLogs = JSON.parse(localStorage.getItem('portfolio_contact_logs')) || [];
             if (contactLogs.length > 0) {
@@ -174,14 +175,13 @@ document.addEventListener('DOMContentLoaded', function() {
             updatePageStats(pageStats);
         }
 
-        // Initialize charts if canvas elements exist
         if (elements.deviceChart || elements.sessionChart) {
             initCharts(deviceStats, sessionBuckets);
         }
     }
 
     /**
-     * Format date to readable string
+     * Format date
      */
     function formatDate(timestamp) {
         try {
@@ -283,13 +283,7 @@ document.addEventListener('DOMContentLoaded', function() {
         elements.visitorsTableBody.innerHTML = '';
 
         if (!visitors || visitors.length === 0) {
-            const row = document.createElement('tr');
-            const cell = document.createElement('td');
-            cell.colSpan = 6;
-            cell.textContent = 'No visitor data available';
-            cell.style.textAlign = 'center';
-            row.appendChild(cell);
-            elements.visitorsTableBody.appendChild(row);
+            elements.visitorsTableBody.innerHTML = '<tr><td colspan="6">No visitor data available</td></tr>';
             return;
         }
 
@@ -297,30 +291,14 @@ document.addEventListener('DOMContentLoaded', function() {
         sortedVisitors.forEach(visitor => {
             const row = document.createElement('tr');
 
-            const idCell = document.createElement('td');
-            idCell.textContent = visitor.id?.substring(0, 8) + '...' || 'N/A';
-
-            const dateCell = document.createElement('td');
-            dateCell.textContent = formatDate(visitor.timestamp);
-
-            const visitsCell = document.createElement('td');
-            visitsCell.textContent = visitor.visits || 0;
-
-            const browserCell = document.createElement('td');
-            browserCell.textContent = visitor.browser || 'Unknown';
-
-            const deviceCell = document.createElement('td');
-            deviceCell.textContent = visitor.device || 'Unknown';
-
-            const screenCell = document.createElement('td');
-            screenCell.textContent = visitor.screenSize || 'Unknown';
-
-            row.appendChild(idCell);
-            row.appendChild(dateCell);
-            row.appendChild(visitsCell);
-            row.appendChild(browserCell);
-            row.appendChild(deviceCell);
-            row.appendChild(screenCell);
+            row.innerHTML = `
+                <td>${visitor.id?.substring(0, 8) + '...' || 'N/A'}</td>
+                <td>${formatDate(visitor.timestamp)}</td>
+                <td>${visitor.visits || 0}</td>
+                <td>${visitor.browser || 'Unknown'}</td>
+                <td>${visitor.device || 'Unknown'}</td>
+                <td>${visitor.screenSize || 'Unknown'}</td>
+            `;
 
             elements.visitorsTableBody.appendChild(row);
         });
@@ -333,13 +311,7 @@ document.addEventListener('DOMContentLoaded', function() {
         elements.contactLogsTableBody.innerHTML = '';
 
         if (!contactLogs || contactLogs.length === 0) {
-            const row = document.createElement('tr');
-            const cell = document.createElement('td');
-            cell.colSpan = 6;
-            cell.textContent = 'No contact submissions available';
-            cell.style.textAlign = 'center';
-            row.appendChild(cell);
-            elements.contactLogsTableBody.appendChild(row);
+            elements.contactLogsTableBody.innerHTML = '<tr><td colspan="6">No contact submissions available</td></tr>';
             return;
         }
 
@@ -347,32 +319,14 @@ document.addEventListener('DOMContentLoaded', function() {
         sortedLogs.forEach(log => {
             const row = document.createElement('tr');
 
-            const idCell = document.createElement('td');
-            idCell.textContent = log.id?.substring(0, 8) + '...' || 'N/A';
-
-            const nameCell = document.createElement('td');
-            nameCell.textContent = log.name || 'N/A';
-
-            const emailCell = document.createElement('td');
-            emailCell.textContent = log.email || 'N/A';
-
-            const subjectCell = document.createElement('td');
-            subjectCell.textContent = log.subject || 'N/A';
-            subjectCell.title = log.subject || ''; // Full subject on hover
-
-            const messageCell = document.createElement('td');
-            messageCell.textContent = log.message && log.message.length > 50 ? log.message.substring(0, 50) + '...' : log.message || 'N/A';
-            messageCell.title = log.message || ''; // Full message on hover
-
-            const dateCell = document.createElement('td');
-            dateCell.textContent = formatDate(log.timestamp);
-
-            row.appendChild(idCell);
-            row.appendChild(nameCell);
-            row.appendChild(emailCell);
-            row.appendChild(subjectCell);
-            row.appendChild(messageCell);
-            row.appendChild(dateCell);
+            row.innerHTML = `
+                <td>${log.id?.substring(0, 8) + '...' || 'N/A'}</td>
+                <td>${log.name || 'N/A'}</td>
+                <td>${log.email || 'N/A'}</td>
+                <td title="${log.subject || ''}">${log.subject && log.subject.length > 30 ? log.subject.substring(0, 30) + '...' : log.subject || 'N/A'}</td>
+                <td title="${log.message || ''}">${log.message && log.message.length > 30 ? log.message.substring(0, 30) + '...' : log.message || 'N/A'}</td>
+                <td>${formatDate(log.timestamp)}</td>
+            `;
 
             elements.contactLogsTableBody.appendChild(row);
         });
@@ -383,11 +337,13 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function updateBrowserStats(browserStats) {
         elements.browserStats.innerHTML = '';
-        const total = browserStats.reduce((sum, stat) => sum + (stat.count || 0), 0);
-        if (total === 0) {
+
+        if (!browserStats || browserStats.length === 0) {
             elements.browserStats.innerHTML = '<p>No browser data available</p>';
             return;
         }
+
+        const total = browserStats.reduce((sum, stat) => sum + (stat.count || 0), 0);
         browserStats.forEach(stat => {
             const percentage = total > 0 ? Math.round((stat.count / total) * 100) : 0;
             const statItem = document.createElement('div');
@@ -413,11 +369,13 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function updatePageStats(pageStats) {
         elements.pageStats.innerHTML = '';
-        const total = pageStats.reduce((sum, stat) => sum + (stat.count || 0), 0);
-        if (total === 0) {
+
+        if (!pageStats || pageStats.length === 0) {
             elements.pageStats.innerHTML = '<p>No page data available</p>';
             return;
         }
+
+        const total = pageStats.reduce((sum, stat) => sum + (stat.count || 0), 0);
         pageStats.forEach(stat => {
             const percentage = total > 0 ? Math.round((stat.count / total) * 100) : 0;
             const statItem = document.createElement('div');
