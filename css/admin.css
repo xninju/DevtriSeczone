@@ -42,8 +42,10 @@ html {
     align-items: center;
     box-shadow: 0 0.4rem 1.6rem rgba(0, 0, 0, 0.1);
     border-bottom: 1px solid var(--bg-color-lighter);
-    position: sticky;
-    top: 0;
+     position: fixed;
+    margin-top: -80px;
+    margin-left: -25px;
+    width: 100%;
     z-index: 1000;
 }
 
