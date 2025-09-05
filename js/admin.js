@@ -1,502 +1,454 @@
-/*---------------------------------------------
- * Main JavaScript File
- * Handles core functionality of the website
- *--------------------------------------------*/
-
 document.addEventListener('DOMContentLoaded', function() {
     'use strict';
 
-    // Wait for window to load
-    window.onload = function() {
-        // Hide preloader once page is fully loaded
-        const preloader = document.querySelector('.preloader');
-        preloader.classList.add('hide');
+    // Debug mode for detailed logging
+    const DEBUG = true;
 
-        // Start animations
-        initRevealAnimations();
-
-        // Init skill progress bars
-        initSkillBars();
-
-        // Init stat counters
-        initCounters();
-
-        // Initialize the help bot
-        initHelpBot();
+    // DOM elements
+    const elements = {
+        totalVisitors: document.getElementById('total-visitors'),
+        totalPageViews: document.getElementById('total-page-views'),
+        mobileUsers: document.getElementById('mobile-users'),
+        pcUsers: document.getElementById('pc-users'),
+        visitorsTableBody: document.getElementById('visitors-table-body'),
+        contactLogsTableBody: document.getElementById('contact-logs-table-body'),
+        browserStats: document.getElementById('browser-stats'),
+        pageStats: document.getElementById('page-stats'),
+        deviceChart: document.getElementById('device-chart'),
+        sessionChart: document.getElementById('session-chart')
     };
 
-    // Get all DOM elements
-    const header = document.getElementById('header');
-    const hamburger = document.querySelector('.hamburger');
-    const mobileNav = document.querySelector('.mobile-nav');
-    const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
-    const navLinks = document.querySelectorAll('.nav-link');
-    const sections = document.querySelectorAll('section');
-    const filterBtns = document.querySelectorAll('.filter-btn');
-    const projectCards = document.querySelectorAll('.project-card');
-    const contactForm = document.getElementById('contact-form');
-    const formMessage = document.getElementById('form-message');
-
-    // Initialize custom cursor
-    initCustomCursor();
-
-    // Header scroll event
-    window.addEventListener('scroll', function() {
-        // Add sticky class to header on scroll
-        if (window.scrollY > 100) {
-            header.classList.add('sticky');
-        } else {
-            header.classList.remove('sticky');
+    // Check for missing DOM elements
+    Object.entries(elements).forEach(([key, element]) => {
+        if (!element && DEBUG) {
+            console.warn(`Element #${key} not found in admin.html`);
         }
-
-        // Highlight active nav link based on scroll position
-        let current = '';
-
-        sections.forEach((section) => {
-            const sectionTop = section.offsetTop - 100;
-            const sectionHeight = section.clientHeight;
-            if (scrollY >= sectionTop) {
-                current = section.getAttribute('id');
-            }
-        });
-
-        navLinks.forEach((link) => {
-            link.classList.remove('active');
-            if (link.getAttribute('href').slice(1) === current) {
-                link.classList.add('active');
-            }
-        });
     });
 
-    // Mobile menu toggle
-    hamburger.addEventListener('click', function() {
-        hamburger.classList.toggle('active');
-        mobileNav.classList.toggle('active');
-        document.body.classList.toggle('no-scroll');
-    });
+    // API endpoint
+    const API_BASE_URL = '/api';
 
-    // Close mobile menu on nav link click
-    mobileNavLinks.forEach(link => {
-        link.addEventListener('click', function() {
-            hamburger.classList.remove('active');
-            mobileNav.classList.remove('active');
-            document.body.classList.remove('no-scroll');
-        });
-    });
+    // Initialize dashboard
+    updateStats();
 
-    // Smooth scrolling for all navigation links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function(e) {
-            e.preventDefault();
+    // Set up auto-refresh every 30 seconds
+    setInterval(updateStats, 30000);
 
-            const targetId = this.getAttribute('href');
-            const targetElement = document.querySelector(targetId);
-
-            if (targetElement) {
-                window.scrollTo({
-                    top: targetElement.offsetTop - 70,
-                    behavior: 'smooth'
-                });
-            }
-        });
-    });
-
-    // Projects filter functionality
-    filterBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            // Remove active class from all buttons
-            filterBtns.forEach(btn => btn.classList.remove('active'));
-            // Add active class to clicked button
+    // Set up navigation
+    const navItems = document.querySelectorAll('.admin-nav li');
+    const adminPanels = document.querySelectorAll('.admin-panel');
+    navItems.forEach(item => {
+        item.addEventListener('click', function() {
+            navItems.forEach(navItem => navItem.classList.remove('active'));
             this.classList.add('active');
-
-            const filterValue = this.getAttribute('data-filter');
-
-            projectCards.forEach(card => {
-                if (filterValue === 'all' || card.getAttribute('data-category') === filterValue) {
-                    card.style.display = 'block';
-                    setTimeout(() => {
-                        card.style.opacity = '1';
-                        card.style.transform = 'translateY(0)';
-                    }, 100);
-                } else {
-                    card.style.opacity = '0';
-                    card.style.transform = 'translateY(20px)';
-                    setTimeout(() => {
-                        card.style.display = 'none';
-                    }, 300);
+            const targetId = this.querySelector('a').getAttribute('href').substring(1);
+            adminPanels.forEach(panel => {
+                panel.classList.remove('active');
+                if (panel.id === targetId) {
+                    panel.classList.add('active');
                 }
             });
         });
     });
 
-    // Form submission handling
-    if (contactForm && formMessage) {
-        contactForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            // Clear previous messages
-            formMessage.textContent = '';
-            formMessage.className = 'form-message';
-
-            // Get form data
-            const formData = {
-                name: document.getElementById('name').value.trim(),
-                email: document.getElementById('email').value.trim(),
-                subject: document.getElementById('subject').value.trim(),
-                message: document.getElementById('message').value.trim()
-            };
-
-            // Validate form data
-            if (!validateForm(formData)) {
-                return;
-            }
-
-            // Show loading state
-            const submitBtn = contactForm.querySelector('.submit-btn');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-
-            try {
-                const response = await fetch('/api/contact', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData)
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    formMessage.textContent = 'Your message has been sent successfully!';
-                    formMessage.className = 'form-message success';
-                    contactForm.reset();
-                } else {
-                    formMessage.textContent = result.message || 'Failed to send message. Please try again.';
-                    formMessage.className = 'form-message error';
-                }
-            } catch (error) {
-                console.error('Error submitting form:', error);
-                formMessage.textContent = 'An error occurred. Please try again later.';
-                formMessage.className = 'form-message error';
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<span>Send Message</span><i class="fas fa-paper-plane"></i>';
-            }
+    // Mobile sidebar toggle
+    const sidebarToggle = document.querySelector('.sidebar-toggle');
+    const sidebar = document.querySelector('.admin-sidebar');
+    if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('active');
         });
     }
 
-    // Initialize skill progress bars
-    function initSkillBars() {
-        const progressBars = document.querySelectorAll('.progress-bar');
+    /**
+     * Update all statistics on the dashboard
+     */
+    async function updateStats() {
+        // Show loading state
+        if (elements.totalVisitors) elements.totalVisitors.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        if (elements.totalPageViews) elements.totalPageViews.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        if (elements.mobileUsers) elements.mobileUsers.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        if (elements.pcUsers) elements.pcUsers.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        if (elements.visitorsTableBody) elements.visitorsTableBody.innerHTML = '<tr><td colspan="6"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
+        if (elements.contactLogsTableBody) elements.contactLogsTableBody.innerHTML = '<tr><td colspan="6"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
+        if (elements.browserStats) elements.browserStats.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Loading...</p>';
+        if (elements.pageStats) elements.pageStats.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Loading...</p>';
 
-        progressBars.forEach(bar => {
-            const percent = bar.getAttribute('data-percent');
-
-            // Use IntersectionObserver to trigger animation when bar is in view
-            const observer = new IntersectionObserver(entries => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        setTimeout(() => {
-                            bar.style.width = percent + '%';
-                        }, 400);
-                        observer.unobserve(bar);
-                    }
-                });
-            }, { threshold: 0.5 });
-
-            observer.observe(bar);
-        });
-    }
-
-    // Initialize stat counters
-    function initCounters() {
-        const counters = document.querySelectorAll('.counter');
-
-        counters.forEach(counter => {
-            const target = +counter.getAttribute('data-target');
-
-            // Use IntersectionObserver to trigger animation when counter is in view
-            const observer = new IntersectionObserver(entries => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        counter.innerText = '0';
-
-                        const updateCounter = () => {
-                            const c = +counter.innerText;
-                            const increment = target / 20;
-
-                            if (c < target) {
-                                counter.innerText = Math.ceil(c + increment);
-                                setTimeout(updateCounter, 100);
-                            } else {
-                                counter.innerText = target;
-                            }
-                        };
-
-                        updateCounter();
-                        observer.unobserve(counter);
-                    }
-                });
-            }, { threshold: 0.5 });
-
-            observer.observe(counter);
-        });
-    }
-
-    // Form validation function
-    function validateForm(data) {
-        // Clear previous error messages
-        formMessage.textContent = '';
-        formMessage.className = 'form-message';
-
-        // Validate name (at least 2 characters)
-        if (data.name.length < 2) {
-            formMessage.textContent = 'Name must be at least 2 characters';
-            formMessage.className = 'form-message error';
-            return false;
-        }
-
-        // Validate email
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(data.email)) {
-            formMessage.textContent = 'Please enter a valid email address';
-            formMessage.className = 'form-message error';
-            return false;
-        }
-
-        // Validate subject (at least 3 characters)
-        if (data.subject.length < 3) {
-            formMessage.textContent = 'Subject must be at least 3 characters';
-            formMessage.className = 'form-message error';
-            return false;
-        }
-
-        // Validate message (at least 10 characters)
-        if (data.message.length < 10) {
-            formMessage.textContent = 'Message must be at least 10 characters';
-            formMessage.className = 'form-message error';
-            return false;
-        }
-
-        return true;
-    }
-
-    // Initialize custom cursor
-    function initCustomCursor() {
-        const cursor = document.querySelector('.cursor');
-        const cursorFollower = document.querySelector('.cursor-follower');
-
-        // Only enable custom cursor on desktop
-        if (window.innerWidth > 768) {
-            // Hide default cursor
-            document.body.style.cursor = 'none';
-
-            // Move custom cursor with mouse
-            document.addEventListener('mousemove', function(e) {
-                cursor.style.left = e.clientX + 'px';
-                cursor.style.top = e.clientY + 'px';
-
-                // Follower with slight delay
-                setTimeout(function() {
-                    cursorFollower.style.left = e.clientX + 'px';
-                    cursorFollower.style.top = e.clientY + 'px';
-                }, 70);
-            });
-
-            // Cursor effects for links & buttons
-            document.querySelectorAll('a, button, .project-card, .skill-item, .filter-btn, input, textarea').forEach(item => {
-                item.addEventListener('mouseenter', function() {
-                    cursor.style.width = '0';
-                    cursor.style.height = '0';
-                    cursorFollower.style.width = '40px';
-                    cursorFollower.style.height = '40px';
-                    cursorFollower.style.borderColor = 'var(--primary-color)';
-                    cursorFollower.style.backgroundColor = 'rgba(157, 78, 221, 0.1)';
-                });
-
-                item.addEventListener('mouseleave', function() {
-                    cursor.style.width = '10px';
-                    cursor.style.height = '10px';
-                    cursorFollower.style.width = '30px';
-                    cursorFollower.style.height = '30px';
-                    cursorFollower.style.borderColor = 'var(--primary-light)';
-                    cursorFollower.style.backgroundColor = 'transparent';
-                });
-            });
-        } else {
-            // Hide custom cursor on mobile/tablet
-            cursor.style.display = 'none';
-            cursorFollower.style.display = 'none';
-        }
-    }
-
-    // Initialize reveal animations
-    function initRevealAnimations() {
-        const revealElements = document.querySelectorAll('.reveal-text');
-
-        const revealObserver = new IntersectionObserver((entries, observer) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('active');
-                    observer.unobserve(entry.target);
-                }
-            });
-        }, {
-            threshold: 0.15,
-            rootMargin: '0px 0px -50px 0px'
-        });
-
-        revealElements.forEach(element => {
-            revealObserver.observe(element);
-        });
-    }
-
-    // Initialize help bot
-    function initHelpBot() {
-        const helpBot = document.querySelector('.help-bot');
-        const helpBotButton = document.querySelector('.help-bot-button');
-        const helpBotCloseButton = document.querySelector('.help-bot-close');
-        const helpBotContainer = document.querySelector('.help-bot-container');
-        const helpBotInput = document.getElementById('bot-input');
-        const sendButton = document.querySelector('.send-button');
-        const helpBotMessages = document.querySelector('.help-bot-messages');
-
-        // Response database - simple question/answer pairs
-        const botResponses = {
-            'hi': 'Hello! How can I help you today?',
-            'hello': 'Hi there! How can I assist you?',
-            'hey': 'Hey! What can I do for you?',
-
-            'who are you': 'I\'m a portfolio assistant bot. I can help answer questions about this portfolio, skills, and projects.',
-            'what is this': 'This is a professional portfolio website showcasing my work, skills, and experience as a frontend developer.',
-            'what do you do': 'I\'m here to help visitors navigate this portfolio and answer questions about my skills, projects, and experience.',
-
-            'contact': 'You can get in touch through the contact form in the Contact section, or directly via email at ashishkumarsinghhhh@gmail.com.',
-            'email': 'You can reach me at ashishkumarsinghhhh@gmail.com',
-            'phone': 'For contact information, please check the Contact section or send me an email.',
-
-            'projects': 'I have worked on various web development projects. You can check them out in the Projects section of this portfolio.',
-            'work': 'My work includes various web development projects. Visit the Projects section to see some examples.',
-            'portfolio': 'My portfolio showcases various web development projects with different technologies. Feel free to browse through the Projects section.',
-
-            'skills': 'My skills include HTML5, CSS3, JavaScript, React, Sass, Bootstrap, Git, and more. Check the Skills section for a comprehensive list.',
-            'technologies': 'I work with HTML5, CSS3, JavaScript, React, Sass, Bootstrap, Git, and various other web technologies.',
-            'tech stack': 'My tech stack primarily includes HTML5, CSS3, JavaScript, and modern frameworks/libraries like React.',
-
-            'experience': 'I have 2+ years of experience in frontend development, working on various projects for different clients and industries.',
-            'background': 'I have a background in web development with 2+ years of experience, specializing in creating responsive and interactive websites.',
-
-            'resume': 'You can download my resume using the "Download Resume" button in the Home section.',
-            'cv': 'My CV is available for download in the Home section. Just click on the "Download Resume" button.',
-
-            'services': 'I offer web development services including responsive website creation, web application development, and UI/UX improvements.',
-            'hire': 'I am available for freelance work and full-time opportunities. Please contact me through the Contact section for potential collaborations.',
-            'freelance': 'Yes, I am available for freelance projects. Feel free to contact me with your project details.',
-
-            'thanks': 'You\'re welcome! Is there anything else you\'d like to know?',
-            'thank you': 'Happy to help! Let me know if you have any other questions.',
-
-            'bye': 'Goodbye! Feel free to reach out if you have more questions later.',
-            'goodbye': 'Bye! Have a great day!',
-        };
-
-        // Default responses for unknown queries
-        const defaultResponses = [
-            "I'm not sure I understand. Could you try rephrasing your question?",
-            "I don't have information on that. Would you like to know about my skills, projects, or contact information?",
-            "I don't have an answer for that. Try asking about my skills, experience, or projects instead.",
-            "I'm afraid I can't help with that. Would you like to know more about my work or skills?"
+        // API endpoints
+        const endpoints = [
+            { url: `${API_BASE_URL}/admin/total-visitors`, key: 'totalVisitors', default: { count: 0 } },
+            { url: `${API_BASE_URL}/admin/total-page-views`, key: 'totalPageViews', default: { count: 0 } },
+            { url: `${API_BASE_URL}/admin/mobile-users`, key: 'mobileUsers', default: { percentage: 0 } },
+            { url: `${API_BASE_URL}/admin/pc-users`, key: 'pcUsers', default: { percentage: 0 } },
+            { url: `${API_BASE_URL}/admin/recent-visitors`, key: 'recentVisitors', default: [] },
+            { url: `${API_BASE_URL}/admin/browser-stats`, key: 'browserStats', default: [] },
+            { url: `${API_BASE_URL}/admin/page-stats`, key: 'pageStats', default: [] },
+            { url: `${API_BASE_URL}/admin/device-stats`, key: 'deviceStats', default: [] },
+            { url: `${API_BASE_URL}/admin/session-buckets`, key: 'sessionBuckets', default: [] },
+            { url: `${API_BASE_URL}/admin/contact-logs`, key: 'contactLogs', default: [] }
         ];
 
-        // Toggle bot visibility
-        helpBotButton.addEventListener('click', function() {
-            helpBot.classList.toggle('active');
-            if (helpBot.classList.contains('active')) {
-                helpBotInput.focus();
-            }
-        });
-
-        // Close bot
-        helpBotCloseButton.addEventListener('click', function() {
-            helpBot.classList.remove('active');
-        });
-
-        // Send message on enter key
-        helpBotInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
-
-        // Send message on button click
-        sendButton.addEventListener('click', function() {
-            sendMessage();
-        });
-
-        // Function to send user message and get bot response
-        function sendMessage() {
-            const userMessage = helpBotInput.value.trim();
-
-            if (userMessage === '') return;
-
-            // Add user message to chat
-            addMessageToChat('user', userMessage);
-
-            // Clear input
-            helpBotInput.value = '';
-
-            // Simulate bot "typing" and then respond
-            setTimeout(() => {
-                const botResponse = getBotResponse(userMessage);
-                addMessageToChat('bot', botResponse);
-
-                // Scroll to bottom
-                helpBotMessages.scrollTop = helpBotMessages.scrollHeight;
-            }, 1000);
-        }
-
-        // Function to add message to chat
-        function addMessageToChat(sender, message) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = sender === 'user' ? 'user-message' : 'bot-message';
-
-            const avatarDiv = document.createElement('div');
-            avatarDiv.className = sender === 'user' ? 'user-avatar' : 'bot-avatar';
-
-            const icon = document.createElement('i');
-            icon.className = sender === 'user' ? 'fas fa-user' : 'fas fa-robot';
-            avatarDiv.appendChild(icon);
-
-            const contentDiv = document.createElement('div');
-            contentDiv.className = 'message-content';
-
-            const paragraph = document.createElement('p');
-            paragraph.textContent = message;
-            contentDiv.appendChild(paragraph);
-
-            messageDiv.appendChild(avatarDiv);
-            messageDiv.appendChild(contentDiv);
-
-            helpBotMessages.appendChild(messageDiv);
-
-            // Scroll to bottom
-            helpBotMessages.scrollTop = helpBotMessages.scrollHeight;
-        }
-
-        // Function to get bot response based on user input
-        function getBotResponse(userInput) {
-            // Convert to lowercase for case-insensitive matching
-            const input = userInput.toLowerCase();
-
-            // Check for matches in our response database
-            for (const key in botResponses) {
-                if (input.includes(key)) {
-                    return botResponses[key];
+        const results = {};
+        const fetchPromises = endpoints.map(async ({ url, key, default: defaultValue }) => {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status} for ${url}`);
                 }
+                const data = await response.json();
+                results[key] = data || defaultValue;
+                if (DEBUG) console.log(`Fetched ${url}:`, data);
+            } catch (error) {
+                console.error(`Error fetching ${url}:`, error);
+                results[key] = defaultValue;
             }
+        });
 
-            // If no match found, return a random default response
-            const randomIndex = Math.floor(Math.random() * defaultResponses.length);
-            return defaultResponses[randomIndex];
+        await Promise.all(fetchPromises);
+
+        // Fallback to localStorage if contact-logs API fails
+        if (results.contactLogs.length === 0) {
+            const contactLogs = JSON.parse(localStorage.getItem('portfolio_contact_logs')) || [];
+            if (contactLogs.length > 0) {
+                results.contactLogs = contactLogs;
+                if (DEBUG) console.log('Using localStorage for contact logs:', contactLogs);
+            }
+        }
+
+        // Update UI
+        updateDashboardWithData(
+            results.totalVisitors.count || 0,
+            results.totalPageViews.count || 0,
+            results.mobileUsers.percentage || 0,
+            results.pcUsers.percentage || 0,
+            results.recentVisitors || [],
+            results.browserStats || [],
+            results.pageStats || [],
+            results.deviceStats || [],
+            results.sessionBuckets || [],
+            results.contactLogs || []
+        );
+    }
+
+    /**
+     * Update dashboard with data
+     */
+    function updateDashboardWithData(totalVisitors, totalPageViews, mobilePercentage, pcPercentage, visitors, browserStats, pageStats, deviceStats, sessionBuckets, contactLogs) {
+        if (elements.totalVisitors) {
+            elements.totalVisitors.textContent = totalVisitors;
+            elements.totalVisitors.closest('.stats-card')?.classList.add('pulse');
+            setTimeout(() => elements.totalVisitors.closest('.stats-card')?.classList.remove('pulse'), 1000);
+        }
+
+        if (elements.totalPageViews) {
+            elements.totalPageViews.textContent = totalPageViews;
+            elements.totalPageViews.closest('.stats-card')?.classList.add('pulse');
+            setTimeout(() => elements.totalPageViews.closest('.stats-card')?.classList.remove('pulse'), 1000);
+        }
+
+        if (elements.mobileUsers) {
+            elements.mobileUsers.textContent = `${mobilePercentage}%`;
+            elements.mobileUsers.closest('.stats-card')?.classList.add('pulse');
+            setTimeout(() => elements.mobileUsers.closest('.stats-card')?.classList.remove('pulse'), 1000);
+        }
+
+        if (elements.pcUsers) {
+            elements.pcUsers.textContent = `${pcPercentage}%`;
+            elements.pcUsers.closest('.stats-card')?.classList.add('pulse');
+            setTimeout(() => elements.pcUsers.closest('.stats-card')?.classList.remove('pulse'), 1000);
+        }
+
+        if (elements.visitorsTableBody) {
+            populateVisitorsTable(visitors);
+        }
+
+        if (elements.contactLogsTableBody) {
+            populateContactLogsTable(contactLogs);
+        }
+
+        if (elements.browserStats) {
+            updateBrowserStats(browserStats);
+        }
+
+        if (elements.pageStats) {
+            updatePageStats(pageStats);
+        }
+
+        // Initialize charts if canvas elements exist
+        if (elements.deviceChart || elements.sessionChart) {
+            initCharts(deviceStats, sessionBuckets);
         }
     }
+
+    /**
+     * Format date to readable string
+     */
+    function formatDate(timestamp) {
+        try {
+            const date = new Date(timestamp);
+            if (isNaN(date.getTime())) throw new Error('Invalid timestamp');
+            return date.toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (error) {
+            console.error('Error formatting date:', error);
+            return 'Invalid Date';
+        }
+    }
+
+    /**
+     * Initialize charts
+     */
+    function initCharts(deviceStats, sessionBuckets) {
+        if (typeof Chart === 'undefined') {
+            console.error('Chart.js not loaded');
+            return;
+        }
+
+        if (elements.deviceChart) {
+            initDeviceChart(deviceStats);
+        }
+
+        if (elements.sessionChart) {
+            initSessionChart(sessionBuckets);
+        }
+    }
+
+    /**
+     * Device distribution chart
+     */
+    function initDeviceChart(deviceStats) {
+        const ctx = elements.deviceChart.getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: deviceStats.map(stat => stat.device || 'Unknown'),
+                datasets: [{
+                    data: deviceStats.map(stat => stat.count || 0),
+                    backgroundColor: ['#9D4EDD', '#C4A1FF', '#5A189A'],
+                    borderColor: '#121212',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#CCCCCC', padding: 15 }
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * Session duration chart
+     */
+    function initSessionChart(sessionBuckets) {
+        const ctx = elements.sessionChart.getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: sessionBuckets.map(stat => stat.bucket || 'Unknown'),
+                datasets: [{
+                    label: 'Number of Sessions',
+                    data: sessionBuckets.map(stat => stat.count || 0),
+                    backgroundColor: '#9D4EDD',
+                    borderColor: '#5A189A',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, ticks: { color: '#CCCCCC' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+                    x: { ticks: { color: '#CCCCCC' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } }
+                },
+                plugins: { legend: { labels: { color: '#CCCCCC' } } }
+            }
+        });
+    }
+
+    /**
+     * Populate visitors table
+     */
+    function populateVisitorsTable(visitors) {
+        elements.visitorsTableBody.innerHTML = '';
+
+        if (!visitors || visitors.length === 0) {
+            const row = document.createElement('tr');
+            const cell = document.createElement('td');
+            cell.colSpan = 6;
+            cell.textContent = 'No visitor data available';
+            cell.style.textAlign = 'center';
+            row.appendChild(cell);
+            elements.visitorsTableBody.appendChild(row);
+            return;
+        }
+
+        const sortedVisitors = [...visitors].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        sortedVisitors.forEach(visitor => {
+            const row = document.createElement('tr');
+
+            const idCell = document.createElement('td');
+            idCell.textContent = visitor.id?.substring(0, 8) + '...' || 'N/A';
+
+            const dateCell = document.createElement('td');
+            dateCell.textContent = formatDate(visitor.timestamp);
+
+            const visitsCell = document.createElement('td');
+            visitsCell.textContent = visitor.visits || 0;
+
+            const browserCell = document.createElement('td');
+            browserCell.textContent = visitor.browser || 'Unknown';
+
+            const deviceCell = document.createElement('td');
+            deviceCell.textContent = visitor.device || 'Unknown';
+
+            const screenCell = document.createElement('td');
+            screenCell.textContent = visitor.screenSize || 'Unknown';
+
+            row.appendChild(idCell);
+            row.appendChild(dateCell);
+            row.appendChild(visitsCell);
+            row.appendChild(browserCell);
+            row.appendChild(deviceCell);
+            row.appendChild(screenCell);
+
+            elements.visitorsTableBody.appendChild(row);
+        });
+    }
+
+    /**
+     * Populate contact logs table
+     */
+    function populateContactLogsTable(contactLogs) {
+        elements.contactLogsTableBody.innerHTML = '';
+
+        if (!contactLogs || contactLogs.length === 0) {
+            const row = document.createElement('tr');
+            const cell = document.createElement('td');
+            cell.colSpan = 6;
+            cell.textContent = 'No contact submissions available';
+            cell.style.textAlign = 'center';
+            row.appendChild(cell);
+            elements.contactLogsTableBody.appendChild(row);
+            return;
+        }
+
+        const sortedLogs = [...contactLogs].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        sortedLogs.forEach(log => {
+            const row = document.createElement('tr');
+
+            const idCell = document.createElement('td');
+            idCell.textContent = log.id?.substring(0, 8) + '...' || 'N/A';
+
+            const nameCell = document.createElement('td');
+            nameCell.textContent = log.name || 'N/A';
+
+            const emailCell = document.createElement('td');
+            emailCell.textContent = log.email || 'N/A';
+
+            const subjectCell = document.createElement('td');
+            subjectCell.textContent = log.subject || 'N/A';
+            subjectCell.title = log.subject || ''; // Full subject on hover
+
+            const messageCell = document.createElement('td');
+            messageCell.textContent = log.message && log.message.length > 50 ? log.message.substring(0, 50) + '...' : log.message || 'N/A';
+            messageCell.title = log.message || ''; // Full message on hover
+
+            const dateCell = document.createElement('td');
+            dateCell.textContent = formatDate(log.timestamp);
+
+            row.appendChild(idCell);
+            row.appendChild(nameCell);
+            row.appendChild(emailCell);
+            row.appendChild(subjectCell);
+            row.appendChild(messageCell);
+            row.appendChild(dateCell);
+
+            elements.contactLogsTableBody.appendChild(row);
+        });
+    }
+
+    /**
+     * Update browser stats
+     */
+    function updateBrowserStats(browserStats) {
+        elements.browserStats.innerHTML = '';
+        const total = browserStats.reduce((sum, stat) => sum + (stat.count || 0), 0);
+        if (total === 0) {
+            elements.browserStats.innerHTML = '<p>No browser data available</p>';
+            return;
+        }
+        browserStats.forEach(stat => {
+            const percentage = total > 0 ? Math.round((stat.count / total) * 100) : 0;
+            const statItem = document.createElement('div');
+            statItem.className = 'stat-item';
+            let iconClass = 'fas fa-globe';
+            if (stat.browser === 'Chrome') iconClass = 'fab fa-chrome';
+            else if (stat.browser === 'Firefox') iconClass = 'fab fa-firefox';
+            else if (stat.browser === 'Safari') iconClass = 'fab fa-safari';
+            else if (stat.browser === 'Edge') iconClass = 'fab fa-edge';
+            else if (stat.browser === 'Opera') iconClass = 'fab fa-opera';
+            else if (stat.browser === 'Internet Explorer') iconClass = 'fab fa-internet-explorer';
+            statItem.innerHTML = `
+                <div class="stat-name"><i class="${iconClass}"></i> ${stat.browser || 'Unknown'}</div>
+                <div class="stat-value">${percentage}%</div>
+                <div class="progress-container"><div class="progress-bar" style="width: ${percentage}%"></div></div>
+            `;
+            elements.browserStats.appendChild(statItem);
+        });
+    }
+
+    /**
+     * Update page stats
+     */
+    function updatePageStats(pageStats) {
+        elements.pageStats.innerHTML = '';
+        const total = pageStats.reduce((sum, stat) => sum + (stat.count || 0), 0);
+        if (total === 0) {
+            elements.pageStats.innerHTML = '<p>No page data available</p>';
+            return;
+        }
+        pageStats.forEach(stat => {
+            const percentage = total > 0 ? Math.round((stat.count / total) * 100) : 0;
+            const statItem = document.createElement('div');
+            statItem.className = 'stat-item';
+            let pageName = stat.page === '/' ? 'Home' : stat.page?.split('/').pop()?.split('.')[0] || 'Unknown';
+            pageName = pageName.charAt(0).toUpperCase() + pageName.slice(1);
+            statItem.innerHTML = `
+                <div class="stat-name"><i class="fas fa-file"></i> ${pageName}</div>
+                <div class="stat-value">${stat.count} views</div>
+                <div class="progress-container"><div class="progress-bar" style="width: ${percentage}%"></div></div>
+            `;
+            elements.pageStats.appendChild(statItem);
+        });
+    }
+
+    /**
+     * Clean up old data
+     */
+    window.cleanupOldData = async function() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/admin/cleanup`, { method: 'POST' });
+            const data = await response.json();
+            if (data.success) {
+                alert('Old data cleaned up successfully');
+                updateStats();
+            } else {
+                alert('Failed to clean up data');
+            }
+        } catch (error) {
+            console.error('Error cleaning up data:', error);
+            alert('Error cleaning up data');
+        }
+    };
 });
