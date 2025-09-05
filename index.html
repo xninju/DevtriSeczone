@@ -93,25 +93,6 @@
 <div id="contact-button"><i class="fas fa-phone"></i> Contact Us</div>
 <div class="overlay" id="overlay"></div>
 
-<!-- Contact Form -->
-<div id="contact-form">
-    <form id="contactForm">
-        <label>
-            Your Name:
-            <input type="text" name="name" required>
-          </label>
-      <label>
-        Your email:
-        <input type="email" name="email" required>
-      </label>
-      <label>
-        Your message:
-        <textarea name="message" required></textarea>
-      </label>
-      <button type="submit">Send</button>
-    </form>
-</div>
-
 <!-- Statistics Section -->
 <section id="statistics" class="statistics">
     <div class="container">
@@ -340,7 +321,8 @@
         <h2 class="text-center mb-5">Contact Us</h2>
         <div class="row">
             <div class="col-md-6">
-                <form id="contact-form" class="contact-form">
+                <div class="contact-form-wrapper reveal-text delay-400">
+                        <form id="contact-form" class="contact-form">
                             <div class="form-group">
                                 <input type="text" id="name" name="name" placeholder="Your Name" required>
                                 <span class="form-icon"><i class="fas fa-user"></i></span>
@@ -363,6 +345,7 @@
                                 <i class="fas fa-paper-plane"></i>
                             </button>
                         </form>
+                    </div>
             </div>
             <div class="col-md-6">
                 <div class="contact-info">
